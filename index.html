@@ -26,6 +26,8 @@
         padding: 0;
         overflow: hidden;
         font-family: "Pixeloid Sans", sans-serif;
+        user-select: none;
+        -webkit-user-select: none;
       }
       .modal {
         position: fixed;
@@ -39,10 +41,22 @@
         align-items: center;
         color: white;
         flex-direction: column;
+        text-align: center;
       }
       .modal h1 {
         font-size: 4vw;
         margin: 0px;
+      }
+      .modal h2 {
+        font-size: 2.6vw;
+        margin: 1vw 0 0.5vw;
+      }
+      .modal p {
+        font-size: 1.5vw;
+        margin: 1vw 0;
+      }
+      .overlay {
+        background-color: rgba(0, 0, 0, 0.85);
       }
       .loadingBar {
         border: 0.6vw solid white;
@@ -56,6 +70,77 @@
       .loadingBoxBlue {
         background-color: rgb(59, 138, 216);
       }
+      .selector {
+        display: flex;
+        align-items: center;
+        gap: 4vw;
+        margin-top: 2vw;
+      }
+      .sorcererCard {
+        width: 42vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .sorcererImg {
+        width: 14vw;
+        height: 14vw;
+        object-fit: contain;
+        animation-name: updown;
+        animation-duration: 1.5s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+      }
+      .sorcererDesc {
+        font-size: 1.2vw !important;
+        line-height: 1.6;
+        color: #bbb;
+      }
+      .abilityList {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1vw 2vw;
+        font-size: 1.1vw;
+      }
+      .abilityItem {
+        display: flex;
+        align-items: center;
+        gap: 0.6vw;
+      }
+      .abilityItem img {
+        width: 2.2vw;
+        height: 2.2vw;
+        object-fit: contain;
+      }
+      .key {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 2vw;
+        height: 2vw;
+        border-radius: 100vw;
+        background-color: #444;
+        font-size: 1vw;
+      }
+      .counter {
+        font-size: 1.2vw;
+        color: #888;
+        margin-top: 1.5vw;
+      }
+      .messageImg {
+        width: 12vw;
+        height: 12vw;
+        object-fit: contain;
+        margin: 1vw 0;
+      }
+      .flipped {
+        transform: scaleX(-1);
+      }
+      .messageButtons {
+        display: flex;
+        gap: 2vw;
+      }
       .bg {
         position: fixed;
         top: 0;
@@ -65,6 +150,18 @@
         z-index: -1;
         object-fit: cover;
         object-position: bottom center;
+      }
+      .hud {
+        position: fixed;
+        top: 1.5vw;
+        left: 0;
+        width: 92vw;
+        text-align: center;
+        color: white;
+        font-size: 2vw;
+        text-shadow: 0.2vw 0.2vw 0 black;
+        z-index: 500;
+        display: none;
       }
       .buttons {
         position: fixed;
@@ -95,10 +192,27 @@
         cursor: pointer;
         outline: none;
         font-family: "Pixeloid Sans", sans-serif;
+        touch-action: manipulation;
       }
       .button:active {
         box-shadow: 0px 0.2vw 0px #999;
         transform: translateY(0.25vw);
+      }
+      .button.cooldown {
+        opacity: 0.35;
+      }
+      .wideButton {
+        width: auto;
+        height: auto;
+        padding: 1vw 3vw;
+        border-radius: 1vw;
+        font-size: 1.8vw;
+        margin-top: 2.5vw;
+        background-color: rgb(59, 138, 216);
+        box-shadow: 0px 0.55vw 0px rgb(30, 80, 140);
+      }
+      .wideButton:active {
+        box-shadow: 0px 0.2vw 0px rgb(30, 80, 140);
       }
       .element-parent {
         position: fixed;
@@ -110,6 +224,25 @@
         width: 14vw;
         height: auto;
       }
+      .hpBar {
+        position: absolute;
+        bottom: calc(100% + 0.5vw);
+        left: 50%;
+        width: 10vw;
+        margin-left: -5vw;
+        height: 1.4vw;
+        border: 0.3vw solid white;
+        background-color: rgba(0, 0, 0, 0.6);
+      }
+      .opponent .hpBar {
+        transform: scaleX(-1);
+      }
+      .hpFill {
+        width: 100%;
+        height: 100%;
+        background-color: rgb(76, 209, 55);
+        transition: width 0.2s linear;
+      }
       .player {
         left: 8vw;
         animation-name: updown;
@@ -118,7 +251,7 @@
         animation-timing-function: linear;
       }
       .opponent {
-        right: 15vw;
+        left: 71vw;
         transform: scaleX(-1);
         animation-name: updownopp;
         animation-duration: 1.5s;
@@ -235,7 +368,7 @@
     </style>
   </head>
   <body>
-    <div class="modal" style="z-index: 2000">
+    <div class="modal" id="loadingModal" style="z-index: 2000">
       <h1>LOADING</h1>
       <div class="loadingBar">
         <div class="loadingBox"></div>
@@ -260,29 +393,130 @@
         <div class="loadingBox"></div>
       </div>
     </div>
+    <div class="modal" id="selectModal" style="z-index: 2000; display: none">
+      <h1>CHOOSE YOUR SORCERER</h1>
+      <div class="selector">
+        <button class="button" id="prevSorcerer">&lt;</button>
+        <div class="sorcererCard">
+          <img class="sorcererImg" id="sorcererImg" />
+          <h2 id="sorcererName"></h2>
+          <p class="sorcererDesc" id="sorcererDesc"></p>
+          <div class="abilityList" id="sorcererAbilities"></div>
+        </div>
+        <button class="button" id="nextSorcerer">&gt;</button>
+      </div>
+      <div class="counter" id="sorcererCounter"></div>
+      <button class="button wideButton" id="selectSorcerer">SELECT</button>
+    </div>
+    <div class="modal overlay" id="messageModal" style="z-index: 2000; display: none">
+      <h1 id="messageTitle"></h1>
+      <img class="messageImg flipped" id="messageImg" />
+      <p id="messageText"></p>
+      <div class="messageButtons" id="messageButtons"></div>
+    </div>
+    <div class="hud" id="hud"></div>
     <div class="buttons">
-      <button class="button">X</button>
-      <button class="button">Y</button>
-      <button class="button">A</button>
-      <button class="button">B</button>
+      <button class="button" id="btnX" title="Shield">X</button>
+      <button class="button" id="btnY">Y</button>
+      <button class="button" id="btnA">A</button>
+      <button class="button" id="btnB">B</button>
     </div>
     <div class="main">
       <img src="/assets/sky_bg.png" class="bg" />
       <div class="element-parent player" id="player">
-        <img src="/assets/vesh.svg" class="character" onclick="movePlayer()" />
+        <div class="hpBar"><div class="hpFill"></div></div>
+        <img src="/assets/vesh.svg" class="character" />
       </div>
       <div class="element-parent opponent" id="opponent">
+        <div class="hpBar"><div class="hpFill"></div></div>
         <img src="/assets/vesh.svg" class="character" />
       </div>
     </div>
   </body>
   <script>
     const bgImage = document.querySelector(".bg");
-    const player = document.querySelector(".player");
-    const opponent = document.querySelector(".opponent");
-    const playerAbilityTimeout = 500;
-    const shieldCooldownTime = 15000;
+    const loadingModal = document.querySelector("#loadingModal");
+    const selectModal = document.querySelector("#selectModal");
+    const messageModal = document.querySelector("#messageModal");
+    const hud = document.querySelector("#hud");
+    const shieldButton = document.querySelector("#btnX");
+    const abilityButtons = [
+      document.querySelector("#btnY"),
+      document.querySelector("#btnA"),
+      document.querySelector("#btnB"),
+    ];
+    const abilityKeys = ["Y", "A", "B"];
     const activeAbilities = new Set();
+
+    const ABILITY_COOLDOWN = 500;
+    const SHIELD_COOLDOWN = 15000;
+    const SHIELD_DURATION = 5000;
+    const MAX_HP = 100;
+    const CHARACTER_WIDTH = 14;
+    // Abilities are written from the player's (left) side; the opponent's are mirrored around this line (in vw).
+    const MIRROR_WIDTH = 93;
+    const PLAYER_START_X = 8;
+    const PLAYER_MIN_X = 0;
+    const PLAYER_MAX_X = 45 - CHARACTER_WIDTH;
+    const OPPONENT_START_X = 71;
+    const OPPONENT_MIN_X = 50;
+    const OPPONENT_MAX_X = 92 - CHARACTER_WIDTH;
+    const LOREM =
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+
+    const SORCERERS = [
+      {
+        id: "brom",
+        name: "Brom",
+        img: "/assets/brom.png",
+        description: LOREM,
+        abilities: [
+          { name: "Mountain", icon: "/assets/brom/mountain.png", cast: castMountain },
+          { name: "Rock", icon: "/assets/brom/rock.png", cast: castRock },
+          { name: "Roots", icon: "/assets/brom/roots.png", cast: castRoots },
+        ],
+      },
+      {
+        id: "kael",
+        name: "Kael",
+        img: "/assets/kael.svg",
+        description: LOREM,
+        abilities: [
+          { name: "Fireball", icon: "/assets/kael/fireball.png", cast: castFireball },
+          { name: "Meteor Shower", icon: "/assets/kael/meteor.png", cast: castMeteorShower },
+          { name: "Molotov", icon: "/assets/kael/meteor.png", cast: castMolotov },
+        ],
+      },
+      {
+        id: "nimbra",
+        name: "Nimbra",
+        img: "/assets/nimbra.png",
+        description: LOREM,
+        abilities: [
+          { name: "Flood", icon: "/assets/nimbra/flood.png", cast: castFlood },
+          { name: "Tornado", icon: "/assets/nimbra/tornado.png", cast: castTornado },
+          { name: "Water Drop", icon: "/assets/nimbra/water_drop.png", cast: castWaterDrop },
+        ],
+      },
+      {
+        id: "vesh",
+        name: "Vesh",
+        img: "/assets/vesh.svg",
+        description: LOREM,
+        abilities: [
+          { name: "Heal", icon: "/assets/vesh/heal.png", cast: castHeal, heal: true },
+          { name: "Moon Blade", icon: "/assets/vesh/moon_blade.png", cast: castMoonBlade },
+          { name: "Ball", icon: "/assets/vesh/ball.png", cast: castBall },
+        ],
+      },
+    ];
+
+    // Opponent difficulty per level
+    const LEVELS = [
+      { castInterval: 2000, power: 1, moveSpeed: 10, dodgeChance: 0.6, shieldChance: 0.25 },
+      { castInterval: 1500, power: 1.25, moveSpeed: 14, dodgeChance: 1, shieldChance: 0.4 },
+      { castInterval: 1100, power: 1.5, moveSpeed: 18, dodgeChance: 1.5, shieldChance: 0.55 },
+    ];
 
     const imageAssets = [
       "/assets/vesh.svg",
@@ -305,18 +539,45 @@
       "/assets/sky_bg.png",
     ];
 
+    function createFighter(el, dir) {
+      return {
+        el,
+        img: el.querySelector(".character"),
+        hpFill: el.querySelector(".hpFill"),
+        dir,
+        x: 0,
+        y: 0,
+        hp: MAX_HP,
+        maxHp: MAX_HP,
+        power: 1,
+        sorcerer: null,
+        isJumping: false,
+        abilityReadyAt: 0,
+        shieldReadyAt: 0,
+        shieldEl: null,
+        targetX: 0,
+        nextMoveAt: 0,
+        nextCastAt: 0,
+      };
+    }
+
+    const player = createFighter(document.querySelector("#player"), 1);
+    const opponent = createFighter(document.querySelector("#opponent"), -1);
+
     let fromBottom = 0;
     let lastTime = 0;
-    let playerX = 8;
-    let playerY = 0;
     let playerSpeed = 20;
     let movingLeft = false;
     let movingRight = false;
-    let isJumping = false;
-    let abilityCooldown = false;
-    let shieldCooldown = false;
+    let screen = "loading";
+    let gameRunning = false;
+    let roundId = 0;
+    let selectIndex = 0;
+    let opponents = [];
+    let currentLevel = 0;
 
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const rand = (min, max) => min + Math.random() * (max - min);
 
     function loadAssets() {
       const loadingBoxes = document.querySelectorAll(".loadingBox");
@@ -334,7 +595,8 @@
               loadingBoxes[displayedCount].classList.add("loadingBoxBlue");
               displayedCount++;
             }
-            document.querySelector(".modal").style.display = "none";
+            loadingModal.style.display = "none";
+            showSelect();
             requestAnimationFrame(gameLoop);
           }
         };
@@ -381,65 +643,307 @@
     window.onload = calcBottom;
     window.onresize = calcBottom;
 
-    // BHAYANKAR ABILITIES
+    // SCREENS
 
-    function throwSomething(options) {
-      const toThrow = document.createElement("img");
-      let toThrowX = playerX + 13;
-      toThrow.src = options.imgUrl;
-      toThrow.className = "element playerAbility";
-      toThrow.style.width = options.width ?? "5vw";
-      toThrow.style.left = `${toThrowX}vw`;
-      toThrow.style.bottom = `${
-        fromBottom + (options.bottom ?? 0.05 * window.innerWidth + playerY)
-      }px`;
-      if (options.class) {
-        toThrow.classList.add(options.class);
+    function renderSelect() {
+      const sorcerer = SORCERERS[selectIndex];
+      document.querySelector("#sorcererImg").src = sorcerer.img;
+      document.querySelector("#sorcererName").textContent =
+        sorcerer.name.toUpperCase();
+      document.querySelector("#sorcererDesc").textContent =
+        sorcerer.description;
+      document.querySelector("#sorcererCounter").textContent = `${
+        selectIndex + 1
+      } / ${SORCERERS.length}`;
+
+      const list = document.querySelector("#sorcererAbilities");
+      list.innerHTML = "";
+      const items = [
+        { key: "X", name: "Shield", icon: "/assets/shield.png" },
+        ...sorcerer.abilities.map((ability, i) => ({
+          key: abilityKeys[i],
+          ...ability,
+        })),
+      ];
+      for (const item of items) {
+        const row = document.createElement("div");
+        row.className = "abilityItem";
+        const key = document.createElement("span");
+        key.className = "key";
+        key.textContent = item.key;
+        const icon = document.createElement("img");
+        icon.src = item.icon;
+        const name = document.createElement("span");
+        name.textContent = item.name;
+        row.append(key, icon, name);
+        list.appendChild(row);
       }
-      activeAbilities.add(toThrow);
-      document.body.appendChild(toThrow);
+    }
 
-      const toThrowSpeed = options.speed ?? 65;
-      function moveObject() {
-        toThrowX += toThrowSpeed * (1 / 60);
-        toThrow.style.left = `${toThrowX}vw`;
-        if (isTouching(toThrow, opponent)) {
-          blink(opponent);
-          activeAbilities.delete(toThrow);
-          toThrow.remove();
+    function changeSelection(step) {
+      selectIndex = (selectIndex + step + SORCERERS.length) % SORCERERS.length;
+      renderSelect();
+    }
+
+    function showSelect() {
+      screen = "select";
+      messageModal.style.display = "none";
+      hud.style.display = "none";
+      selectModal.style.display = "flex";
+      renderSelect();
+    }
+
+    function chooseSorcerer() {
+      if (screen !== "select") return;
+      player.sorcerer = SORCERERS[selectIndex];
+      opponents = SORCERERS.filter((s) => s !== player.sorcerer);
+      currentLevel = 0;
+      player.img.src = player.sorcerer.img;
+      player.sorcerer.abilities.forEach((ability, i) => {
+        abilityButtons[i].title = ability.name;
+      });
+      selectModal.style.display = "none";
+      showLevelIntro();
+    }
+
+    function showMessage({ title, text, img, buttons }) {
+      screen = "message";
+      document.querySelector("#messageTitle").textContent = title;
+      document.querySelector("#messageText").textContent = text;
+      const messageImg = document.querySelector("#messageImg");
+      messageImg.style.display = img ? "block" : "none";
+      if (img) messageImg.src = img;
+      const container = document.querySelector("#messageButtons");
+      container.innerHTML = "";
+      for (const { label, onClick } of buttons) {
+        const button = document.createElement("button");
+        button.className = "button wideButton";
+        button.textContent = label;
+        button.addEventListener("click", onClick);
+        container.appendChild(button);
+      }
+      messageModal.style.display = "flex";
+    }
+
+    function showLevelIntro() {
+      const next = opponents[currentLevel];
+      showMessage({
+        title: `LEVEL ${currentLevel + 1}`,
+        text: `${player.sorcerer.name} vs ${next.name}`,
+        img: next.img,
+        buttons: [{ label: "FIGHT", onClick: startLevel }],
+      });
+    }
+
+    // ROUNDS
+
+    function updateHpBar(f) {
+      const pct = (f.hp / f.maxHp) * 100;
+      f.hpFill.style.width = `${pct}%`;
+      f.hpFill.style.backgroundColor =
+        pct > 50
+          ? "rgb(76, 209, 55)"
+          : pct > 25
+          ? "rgb(251, 197, 49)"
+          : "rgb(232, 65, 24)";
+    }
+
+    function resetFighter(f, sorcerer, x) {
+      f.sorcerer = sorcerer;
+      f.img.src = sorcerer.img;
+      f.x = x;
+      f.y = 0;
+      f.targetX = x;
+      f.isJumping = false;
+      f.el.style.bottom = `${fromBottom}px`;
+      f.hp = f.maxHp;
+      f.abilityReadyAt = 0;
+      f.shieldReadyAt = 0;
+      f.shieldEl = null;
+      updateHpBar(f);
+    }
+
+    function clearArena() {
+      roundId++;
+      for (const ability of activeAbilities) {
+        ability.remove();
+      }
+      activeAbilities.clear();
+      document.querySelectorAll(".effect").forEach((el) => el.remove());
+      player.shieldEl = null;
+      opponent.shieldEl = null;
+      movingLeft = false;
+      movingRight = false;
+    }
+
+    function startLevel() {
+      clearArena();
+      messageModal.style.display = "none";
+      const config = LEVELS[currentLevel];
+      resetFighter(player, player.sorcerer, PLAYER_START_X);
+      resetFighter(opponent, opponents[currentLevel], OPPONENT_START_X);
+      opponent.power = config.power;
+      opponent.nextMoveAt = performance.now() + 1000;
+      opponent.nextCastAt = performance.now() + 1500;
+      hud.textContent = `LEVEL ${currentLevel + 1}/${opponents.length} - ${
+        player.sorcerer.name
+      } vs ${opponent.sorcerer.name}`.toUpperCase();
+      hud.style.display = "block";
+      screen = "game";
+      gameRunning = true;
+    }
+
+    function endRound(won) {
+      if (!gameRunning) return;
+      gameRunning = false;
+      movingLeft = false;
+      movingRight = false;
+      const defeated = opponent.sorcerer;
+      setTimeout(() => {
+        clearArena();
+        if (!won) {
+          showMessage({
+            title: "DEFEATED",
+            text: `${defeated.name} wins this round.`,
+            img: defeated.img,
+            buttons: [
+              { label: "RETRY", onClick: showLevelIntro },
+              { label: "CHANGE SORCERER", onClick: showSelect },
+            ],
+          });
           return;
         }
-        if (toThrowX < 100) {
+        currentLevel++;
+        if (currentLevel >= opponents.length) {
+          showMessage({
+            title: "VICTORY",
+            text: `${player.sorcerer.name} has defeated every sorcerer!`,
+            buttons: [{ label: "PLAY AGAIN", onClick: showSelect }],
+          });
+        } else {
+          showMessage({
+            title: "LEVEL COMPLETE",
+            text: `${defeated.name} has been defeated.`,
+            buttons: [{ label: "NEXT LEVEL", onClick: showLevelIntro }],
+          });
+        }
+      }, 900);
+    }
+
+    function damageFighter(f, amount) {
+      if (!gameRunning) return;
+      f.hp = Math.max(0, f.hp - amount);
+      updateHpBar(f);
+      blink(f.el);
+      if (f.hp <= 0) endRound(f === opponent);
+    }
+
+    function healFighter(f, amount) {
+      f.hp = Math.min(f.maxHp, f.hp + amount);
+      updateHpBar(f);
+    }
+
+    // BHAYANKAR ABILITIES
+
+    function otherFighter(f) {
+      return f === player ? opponent : player;
+    }
+
+    // x of the fighter as if it were standing on the player's side
+    function frameX(f) {
+      return f.dir === 1 ? f.x : MIRROR_WIDTH - f.x - CHARACTER_WIDTH;
+    }
+
+    // converts an x written for the player's side into the caster's side
+    function sideX(f, x, width) {
+      return f.dir === 1 ? x : MIRROR_WIDTH - x - width;
+    }
+
+    function createProjectile(f, imgUrl, width, className) {
+      const el = document.createElement("img");
+      el.src = imgUrl;
+      el.className = "element";
+      el.style.width = `${width}vw`;
+      if (className) {
+        el.classList.add(className);
+        if (f.dir === -1) el.style.animationDirection = "reverse";
+      } else if (f.dir === -1) {
+        el.style.transform = "scaleX(-1)";
+      }
+      el.owner = f;
+      activeAbilities.add(el);
+      document.body.appendChild(el);
+      return el;
+    }
+
+    function removeProjectile(el) {
+      activeAbilities.delete(el);
+      el.remove();
+    }
+
+    // returns true once the projectile is gone (hit, blocked or cleared)
+    function checkHit(el, caster, damage) {
+      if (!el.isConnected) return true;
+      const target = otherFighter(caster);
+      if (target.shieldEl && isTouching(el, target.shieldEl)) {
+        removeProjectile(el);
+        return true;
+      }
+      if (isTouching(el, target.el)) {
+        removeProjectile(el);
+        damageFighter(target, damage * caster.power);
+        return true;
+      }
+      return false;
+    }
+
+    function isRoundActive(round) {
+      return gameRunning && round === roundId;
+    }
+
+    function throwSomething(f, options) {
+      if (!gameRunning) return;
+      const width = options.width ?? 5;
+      const toThrow = createProjectile(f, options.imgUrl, width, options.class);
+      let toThrowX = sideX(f, frameX(f) + 13, width);
+      toThrow.style.left = `${toThrowX}vw`;
+      toThrow.style.bottom = `${
+        fromBottom + (options.bottom ?? 0.05 * window.innerWidth + f.y)
+      }px`;
+
+      const toThrowSpeed = (options.speed ?? 65) * f.dir;
+      let last = null;
+      function moveObject(timestamp) {
+        if (last === null) last = timestamp;
+        const dt = (timestamp - last) / 1000;
+        last = timestamp;
+        toThrowX += toThrowSpeed * dt;
+        toThrow.style.left = `${toThrowX}vw`;
+        if (checkHit(toThrow, f, options.damage ?? 10)) return;
+        if (toThrowX < 100 && toThrowX > -width - 5) {
           requestAnimationFrame(moveObject);
         } else {
-          activeAbilities.delete(toThrow);
-          toThrow.remove();
+          removeProjectile(toThrow);
         }
       }
       requestAnimationFrame(moveObject);
     }
 
-    function projectSomething(options) {
-      const toThrow = document.createElement("img");
-      let toThrowX = options.left ?? playerX + 14;
+    function projectSomething(f, options) {
+      if (!gameRunning) return;
+      const width = options.width ?? 5;
+      const toThrow = createProjectile(f, options.imgUrl, width, options.class);
+      let toThrowX = sideX(f, options.left ?? frameX(f) + 14, width);
       let toThrowY =
-        options.bottom ?? fromBottom + 0.05 * window.innerWidth + playerY;
-      toThrow.src = options.imgUrl;
-      toThrow.className = "element playerAbility";
-      toThrow.style.width = options.width ?? "5vw";
+        options.bottom ?? fromBottom + 0.05 * window.innerWidth + f.y;
       toThrow.style.left = `${toThrowX}vw`;
       toThrow.style.bottom = `${toThrowY}px`;
-      if (options.class) {
-        toThrow.classList.add(options.class);
-      }
-      activeAbilities.add(toThrow);
-      document.body.appendChild(toThrow);
 
       let angle = options.angle ?? Math.PI / 4;
       let speed = ((options.speed ?? 70) * window.innerWidth) / 100;
       const gravity = options.gravity ?? window.innerWidth;
 
-      const initialVelocityX = speed * Math.cos(angle);
+      const initialVelocityX = speed * Math.cos(angle) * f.dir;
       const initialVelocityY = speed * Math.sin(angle);
       let startTime = null;
 
@@ -455,302 +959,336 @@
           0.5 * gravity * timeElapsed ** 2;
         toThrow.style.left = `${currentX}vw`;
         toThrow.style.bottom = `${currentY}px`;
-        if (isTouching(toThrow, opponent)) {
-          blink(opponent);
-          activeAbilities.delete(toThrow);
-          toThrow.remove();
-          return;
-        }
+        if (checkHit(toThrow, f, options.damage ?? 10)) return;
         if (currentX < 100 && currentX > -10 && currentY > fromBottom) {
           requestAnimationFrame(moveObject);
         } else {
-          activeAbilities.delete(toThrow);
-          toThrow.remove();
+          removeProjectile(toThrow);
         }
       }
 
       requestAnimationFrame(moveObject);
     }
 
-    function castShield() {
-      if (shieldCooldown) return;
-      shieldCooldown = true;
-      setTimeout(() => {
-        shieldCooldown = false;
-      }, shieldCooldownTime);
+    function useAbility(f, index) {
+      if (!gameRunning) return;
+      const now = performance.now();
+      if (now < f.abilityReadyAt) return;
+      f.abilityReadyAt = now + ABILITY_COOLDOWN;
+      f.sorcerer.abilities[index].cast(f);
+    }
+
+    function castShield(f) {
+      if (!gameRunning) return;
+      const now = performance.now();
+      if (now < f.shieldReadyAt) return;
+      f.shieldReadyAt = now + SHIELD_COOLDOWN;
       const shieldImage = document.createElement("img");
       shieldImage.src = "/assets/shield.png";
+      shieldImage.className = "effect";
       shieldImage.style.width = "6vw";
       shieldImage.style.bottom = `2vw`;
       shieldImage.style.left = `14vw`;
       shieldImage.style.position = "absolute";
-      document.querySelector("#player").appendChild(shieldImage);
+      f.el.appendChild(shieldImage);
+      f.shieldEl = shieldImage;
       setTimeout(() => {
-        document.querySelector("#player").removeChild(shieldImage);
-      }, 5000);
-      let pehleWala = 0;
-      function checkCollision(timestamp) {
-        if (pehleWala === 0) pehleWala = timestamp;
-        const dt = timestamp - pehleWala;
-        for (const ability of activeAbilities) {
-          if (
-            !ability.classList.contains("playerAbility") &&
-            isTouching(ability, shieldImage)
-          ) {
-            activeAbilities.delete(ability);
-            ability.remove();
-          }
-        }
-        if (dt > 5000) {
-          return;
+        if (f.shieldEl === shieldImage) f.shieldEl = null;
+        shieldImage.remove();
+      }, SHIELD_DURATION);
+    }
+
+    function jump(f) {
+      if (!gameRunning || f.isJumping) return;
+      f.isJumping = true;
+      const round = roundId;
+      const maxJumpHeight = 0.1 * window.innerWidth;
+      const jumpDuration = 0.45;
+      const jumpStartTime = performance.now();
+      function jumpLoop(currentTime) {
+        const elapsed = (currentTime - jumpStartTime) / 1000;
+        if (elapsed < jumpDuration && round === roundId) {
+          f.y = maxJumpHeight * Math.sin((elapsed / jumpDuration) * Math.PI);
+          f.el.style.bottom = `${fromBottom + f.y}px`;
+          requestAnimationFrame(jumpLoop);
         } else {
-          requestAnimationFrame(checkCollision);
+          f.y = 0;
+          f.el.style.bottom = `${fromBottom}px`;
+          f.isJumping = false;
         }
       }
-      requestAnimationFrame(checkCollision);
+      requestAnimationFrame(jumpLoop);
     }
 
     // KAEL
 
-    function castFireball() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      throwSomething({
+    function castFireball(f) {
+      throwSomething(f, {
         imgUrl: "/assets/kael/fireball.png",
-        width: "6vw",
+        width: 6,
         speed: 65,
+        damage: 10,
       });
     }
 
-    function castMeteorShower() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
+    function castMeteorShower(f) {
+      const round = roundId;
+      const damage = 6;
       for (let i = 0; i < 3; i++) {
-        const meteor = document.createElement("img");
-        let meteorX = 100;
-        let meteorY = 0.88 * window.innerHeight - i * 0.16 * window.innerHeight;
-        let lastTimeMeteor = null;
-        meteor.src = "/assets/kael/meteor.png";
-        meteor.className = "element playerAbility";
-        meteor.style.width = "5vw";
-        meteor.style.left = `${meteorX}vw`;
-        meteor.style.bottom = `${meteorY}px`;
-        activeAbilities.add(meteor);
-        document.body.appendChild(meteor);
-
-        const meteorSpeed = 50;
-        function moveMeteor(timestamp) {
-          if (lastTimeMeteor == null) lastTimeMeteor = timestamp;
-          const dt = (timestamp - lastTimeMeteor) / 1000;
-          lastTimeMeteor = timestamp;
-          meteorX -= meteorSpeed * dt;
-          meteorY -= 0.6 * window.innerHeight * dt;
+        setTimeout(() => {
+          if (!isRoundActive(round)) return;
+          const width = 5;
+          const meteor = createProjectile(f, "/assets/kael/meteor.png", width);
+          let meteorX = sideX(f, 100, width);
+          let meteorY =
+            0.88 * window.innerHeight - i * 0.16 * window.innerHeight;
+          let lastTimeMeteor = null;
           meteor.style.left = `${meteorX}vw`;
           meteor.style.bottom = `${meteorY}px`;
 
-          if (isTouching(meteor, opponent)) {
-            blink(opponent);
-            activeAbilities.delete(meteor);
-            meteor.remove();
-            return;
+          const meteorSpeed = 50 * f.dir;
+          function moveMeteor(timestamp) {
+            if (lastTimeMeteor == null) lastTimeMeteor = timestamp;
+            const dt = (timestamp - lastTimeMeteor) / 1000;
+            lastTimeMeteor = timestamp;
+            meteorX -= meteorSpeed * dt;
+            meteorY -= 0.6 * window.innerHeight * dt;
+            meteor.style.left = `${meteorX}vw`;
+            meteor.style.bottom = `${meteorY}px`;
+            if (checkHit(meteor, f, damage)) return;
+            if (meteorX > -15 && meteorX < 105 && meteorY > -200) {
+              requestAnimationFrame(moveMeteor);
+            } else {
+              removeProjectile(meteor);
+            }
           }
-          if (meteorX > -5) {
-            requestAnimationFrame(moveMeteor);
-          } else {
-            activeAbilities.delete(meteor);
-            meteor.remove();
-          }
-        }
-        setTimeout(() => {
           requestAnimationFrame(moveMeteor);
         }, i * 200);
       }
     }
 
-    function castMolotov() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      projectSomething({
+    function castMolotov(f) {
+      projectSomething(f, {
         imgUrl: "/assets/kael/meteor.png",
-        width: "5vw",
+        width: 5,
         angle: Math.PI / 4,
         speed: 70,
         class: "spinning",
+        damage: 12,
       });
     }
 
     // BROM
 
-    function castMountain() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      throwSomething({
+    function castMountain(f) {
+      throwSomething(f, {
         imgUrl: "/assets/brom/mountain.png",
-        width: "14vw",
+        width: 14,
         bottom: window.innerWidth * 0.01,
         speed: 30,
+        damage: 15,
       });
     }
 
-    function castRock() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      projectSomething({
+    function castRock(f) {
+      projectSomething(f, {
         imgUrl: "/assets/brom/rock.png",
-        width: "5vw",
+        width: 5,
         angle: Math.PI / 4,
         speed: 70,
         class: "spinning",
+        damage: 10,
       });
     }
 
-    function castRoots() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      throwSomething({
+    function castRoots(f) {
+      throwSomething(f, {
         imgUrl: "/assets/brom/roots.png",
-        width: "5vw",
+        width: 5,
         speed: 75,
         class: "spinning",
         bottom: window.innerWidth * 0.01,
+        damage: 8,
       });
     }
 
     // NIMBRA
 
-    function castFlood() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
+    function castFlood(f) {
+      const round = roundId;
       for (let i = 0; i < 5; i++) {
         setTimeout(() => {
-          projectSomething({
+          if (!isRoundActive(round)) return;
+          projectSomething(f, {
             imgUrl: "/assets/nimbra/flood.png",
-            width: "9vw",
+            width: 9,
             speed: 30,
             bottom: window.innerHeight,
             left: i * 18 + 10,
             angle: -(Math.PI / 2),
             gravity: 0,
+            damage: 5,
           });
         }, i * 200);
       }
     }
 
-    function castTornado() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      throwSomething({
+    function castTornado(f) {
+      throwSomething(f, {
         imgUrl: "/assets/nimbra/tornado.png",
-        width: "21vw",
+        width: 21,
         speed: 20,
         class: "tornado",
         bottom: window.innerWidth * 0.01,
+        damage: 15,
       });
     }
 
-    function castWaterDrop() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      projectSomething({
+    function castWaterDrop(f) {
+      projectSomething(f, {
         imgUrl: "/assets/nimbra/water_drop.png",
-        width: "5vw",
+        width: 5,
         angle: (5.1 * Math.PI) / 4,
         speed: 70,
         bottom: 0.88 * window.innerHeight,
         left: 95,
         gravity: 0,
+        damage: 10,
       });
     }
 
     // VESH
 
-    function castHeal() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
+    function castHeal(f) {
+      healFighter(f, 20);
       const healImage = document.createElement("img");
       healImage.src = "/assets/vesh/heal.png";
-      healImage.className = "sparkle";
+      healImage.className = "sparkle effect";
       healImage.style.width = "6vw";
       healImage.style.bottom = `2vw`;
       healImage.style.left = `5vw`;
       healImage.style.position = "absolute";
-      document.querySelector("#player").appendChild(healImage);
+      f.el.appendChild(healImage);
       setTimeout(() => {
-        document.querySelector("#player").removeChild(healImage);
+        healImage.remove();
       }, 600);
     }
 
-    function castMoonBlade() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      throwSomething({
+    function castMoonBlade(f) {
+      throwSomething(f, {
         imgUrl: "/assets/vesh/moon_blade.png",
-        width: "4vw",
+        width: 4,
         speed: 65,
         class: "spinning",
+        damage: 10,
       });
     }
 
-    function castBall() {
-      if (abilityCooldown) return;
-      abilityCooldown = true;
-      setTimeout(() => {
-        abilityCooldown = false;
-      }, playerAbilityTimeout);
-      throwSomething({
+    function castBall(f) {
+      throwSomething(f, {
         imgUrl: "/assets/vesh/ball.png",
-        width: "4vw",
+        width: 4,
         speed: 65,
         class: "spinning",
+        damage: 8,
       });
+    }
+
+    // OPPONENT AI
+
+    function updateOpponent(dt, now) {
+      const o = opponent;
+      const config = LEVELS[currentLevel];
+
+      if (now >= o.nextMoveAt) {
+        o.targetX = rand(OPPONENT_MIN_X, OPPONENT_MAX_X);
+        o.nextMoveAt = now + rand(1000, 2500);
+      }
+      const step = config.moveSpeed * dt;
+      o.x += Math.max(-step, Math.min(step, o.targetX - o.x));
+
+      let incoming = false;
+      for (const ability of activeAbilities) {
+        if (ability.owner === player) {
+          incoming = true;
+          break;
+        }
+      }
+      if (incoming && Math.random() < config.dodgeChance * dt) jump(o);
+
+      if (now >= o.nextCastAt) {
+        o.nextCastAt = now + config.castInterval * rand(0.7, 1.3);
+        if (
+          incoming &&
+          now >= o.shieldReadyAt &&
+          Math.random() < config.shieldChance
+        ) {
+          castShield(o);
+          return;
+        }
+        const abilities = o.sorcerer.abilities;
+        const choices = abilities
+          .map((_, i) => i)
+          .filter((i) => !abilities[i].heal || o.hp < o.maxHp * 0.6);
+        useAbility(o, choices[Math.floor(Math.random() * choices.length)]);
+      }
+    }
+
+    function updateButtons(now) {
+      shieldButton.classList.toggle("cooldown", now < player.shieldReadyAt);
+      for (const button of abilityButtons) {
+        button.classList.toggle("cooldown", now < player.abilityReadyAt);
+      }
     }
 
     function gameLoop(timestamp) {
-      const dt = (timestamp - lastTime) / 1000;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
       lastTime = timestamp;
-      if (movingLeft && playerX > 0) {
-        playerX -= playerSpeed * dt;
-      } else if (movingRight && playerX < 45 - 14) {
-        playerX += playerSpeed * dt;
+      if (gameRunning) {
+        if (movingLeft && player.x > PLAYER_MIN_X) {
+          player.x -= playerSpeed * dt;
+        } else if (movingRight && player.x < PLAYER_MAX_X) {
+          player.x += playerSpeed * dt;
+        }
+        updateOpponent(dt, timestamp);
       }
-      player.style.left = `${playerX}vw`;
+      player.el.style.left = `${player.x}vw`;
+      opponent.el.style.left = `${opponent.x}vw`;
+      updateButtons(timestamp);
       requestAnimationFrame(gameLoop);
     }
 
+    // INPUT
+
+    shieldButton.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      castShield(player);
+    });
+    abilityButtons.forEach((button, i) => {
+      button.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        useAbility(player, i);
+      });
+    });
+
+    document
+      .querySelector("#prevSorcerer")
+      .addEventListener("click", () => changeSelection(-1));
+    document
+      .querySelector("#nextSorcerer")
+      .addEventListener("click", () => changeSelection(1));
+    document
+      .querySelector("#selectSorcerer")
+      .addEventListener("click", chooseSorcerer);
+
     document.addEventListener("keydown", (e) => {
+      if (screen === "select") {
+        if (e.key === "ArrowLeft") changeSelection(-1);
+        else if (e.key === "ArrowRight") changeSelection(1);
+        else if (e.key === "Enter") chooseSorcerer();
+        return;
+      }
+      if (!gameRunning) return;
       if (e.key === "a") {
         movingLeft = true;
         e.preventDefault();
@@ -758,51 +1296,7 @@
         movingRight = true;
         e.preventDefault();
       } else if (e.key === "w") {
-        if (!isJumping) {
-          isJumping = true;
-          let maxJumpHeight = 0.1 * window.innerWidth;
-          const jumpDuration = 0.45;
-          const jumpStartTime = performance.now();
-          function jumpLoop(currentTime) {
-            const elapsed = (currentTime - jumpStartTime) / 1000;
-            if (elapsed < jumpDuration) {
-              playerY =
-                maxJumpHeight * Math.sin((elapsed / jumpDuration) * Math.PI);
-              player.style.bottom = `${fromBottom + playerY}px`;
-              requestAnimationFrame(jumpLoop);
-            } else {
-              player.style.bottom = `${fromBottom}px`;
-              isJumping = false;
-            }
-          }
-          requestAnimationFrame(jumpLoop);
-        }
-      } else if (e.key === "f") {
-        castFireball();
-      } else if (e.key === "g") {
-        castMeteorShower();
-      } else if (e.key === "m") {
-        castMountain();
-      } else if (e.key === "r") {
-        castRock();
-      } else if (e.key === "t") {
-        castRoots();
-      } else if (e.key === "y") {
-        castTornado();
-      } else if (e.key === "p") {
-        castWaterDrop();
-      } else if (e.key === "h") {
-        castHeal();
-      } else if (e.key === "b") {
-        castMoonBlade();
-      } else if (e.key === "n") {
-        castBall();
-      } else if (e.key === "x") {
-        castShield();
-      } else if (e.key === "j") {
-        castFlood();
-      } else if (e.key === "l") {
-        castMolotov();
+        jump(player);
       }
     });
 
