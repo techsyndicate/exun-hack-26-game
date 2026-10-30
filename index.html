@@ -5,10 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Reckoning V: Origins</title>
     <style>
+      @font-face {
+        font-family: "Pixeloid Sans";
+        src: url("/assets/fonts/PixeloidSans.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      button,
+      a,
+      input,
+      textarea,
+      select {
+        -webkit-tap-highlight-color: transparent;
+      }
       body {
         margin: 0;
         padding: 0;
         overflow: hidden;
+        font-family: "Pixeloid Sans", sans-serif;
+      }
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100dvw;
+        height: 100dvh;
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        flex-direction: column;
+      }
+      .modal h1 {
+        font-size: 4vw;
+        margin: 0px;
+      }
+      .loadingBar {
+        border: 0.6vw solid white;
+        display: flex;
+        margin-top: 2vw;
+      }
+      .loadingBox {
+        width: 1.75vw;
+        height: 1.75vw;
+      }
+      .loadingBoxBlue {
+        background-color: rgb(59, 138, 216);
       }
       .bg {
         position: fixed;
@@ -19,6 +65,40 @@
         z-index: -1;
         object-fit: cover;
         object-position: bottom center;
+      }
+      .buttons {
+        position: fixed;
+        width: 8vw;
+        height: 100dvh;
+        z-index: 1000;
+        right: 0;
+        top: 0;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+        padding: 2vw 0;
+      }
+      .button {
+        background-color: #444;
+        color: white;
+        width: 6vw;
+        height: 6vw;
+        font-size: 2.1vw;
+        border: none;
+        border-radius: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0px 0.55vw 0px #999;
+        cursor: pointer;
+        outline: none;
+        font-family: "Pixeloid Sans", sans-serif;
+      }
+      .button:active {
+        box-shadow: 0px 0.2vw 0px #999;
+        transform: translateY(0.25vw);
       }
       .element-parent {
         position: fixed;
@@ -32,10 +112,18 @@
       }
       .player {
         left: 8vw;
+        animation-name: updown;
+        animation-duration: 1.5s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
       }
       .opponent {
-        right: 8vw;
+        right: 15vw;
         transform: scaleX(-1);
+        animation-name: updownopp;
+        animation-duration: 1.5s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
       }
       .blinking {
         animation-name: blink;
@@ -108,9 +196,76 @@
           opacity: 1;
         }
       }
+
+      @keyframes updown {
+        0% {
+          transform: translateY(0);
+        }
+        25% {
+          transform: translateY(-0.5vw);
+        }
+        50% {
+          transform: translateY(0);
+        }
+        75% {
+          transform: translateY(0.5vw);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes updownopp {
+        0% {
+          transform: scaleX(-1) translateY(0);
+        }
+        25% {
+          transform: scaleX(-1) translateY(-0.5vw);
+        }
+        50% {
+          transform: scaleX(-1) translateY(0);
+        }
+        75% {
+          transform: scaleX(-1) translateY(0.5vw);
+        }
+        100% {
+          transform: scaleX(-1) translateY(0);
+        }
+      }
     </style>
   </head>
   <body>
+    <div class="modal" style="z-index: 2000">
+      <h1>LOADING</h1>
+      <div class="loadingBar">
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+        <div class="loadingBox"></div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button class="button">X</button>
+      <button class="button">Y</button>
+      <button class="button">A</button>
+      <button class="button">B</button>
+    </div>
     <div class="main">
       <img src="/assets/sky_bg.png" class="bg" />
       <div class="element-parent player" id="player">
@@ -129,6 +284,27 @@
     const shieldCooldownTime = 15000;
     const activeAbilities = new Set();
 
+    const imageAssets = [
+      "/assets/vesh.svg",
+      "/assets/brom.png",
+      "/assets/nimbra.png",
+      "/assets/kael.svg",
+      "/assets/kael/fireball.png",
+      "/assets/kael/meteor.png",
+      "/assets/kael/molotov.png",
+      "/assets/brom/mountain.png",
+      "/assets/brom/rock.png",
+      "/assets/brom/roots.png",
+      "/assets/nimbra/flood.png",
+      "/assets/nimbra/tornado.png",
+      "/assets/nimbra/water_drop.png",
+      "/assets/vesh/heal.png",
+      "/assets/vesh/moon_blade.png",
+      "/assets/vesh/ball.png",
+      "/assets/shield.png",
+      "/assets/sky_bg.png",
+    ];
+
     let fromBottom = 0;
     let lastTime = 0;
     let playerX = 8;
@@ -139,6 +315,33 @@
     let isJumping = false;
     let abilityCooldown = false;
     let shieldCooldown = false;
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    function loadAssets() {
+      const loadingBoxes = document.querySelectorAll(".loadingBox");
+      let loadedCount = 0;
+      let displayedCount = 0;
+
+      for (const asset of imageAssets) {
+        const img = new Image();
+
+        img.onload = async () => {
+          loadedCount++;
+          if (loadedCount === imageAssets.length) {
+            while (displayedCount < loadingBoxes.length) {
+              await sleep(100);
+              loadingBoxes[displayedCount].classList.add("loadingBoxBlue");
+              displayedCount++;
+            }
+            document.querySelector(".modal").style.display = "none";
+            requestAnimationFrame(gameLoop);
+          }
+        };
+
+        img.src = asset;
+      }
+    }
 
     function calcBottom() {
       const scale = Math.max(
@@ -177,7 +380,6 @@
 
     window.onload = calcBottom;
     window.onresize = calcBottom;
-    requestAnimationFrame(gameLoop);
 
     // BHAYANKAR ABILITIES
 
@@ -428,6 +630,7 @@
         width: "5vw",
         speed: 75,
         class: "spinning",
+        bottom: window.innerWidth * 0.01,
       });
     }
 
@@ -448,7 +651,7 @@
             bottom: window.innerHeight,
             left: i * 18 + 10,
             angle: -(Math.PI / 2),
-            gravity: 0
+            gravity: 0,
           });
         }, i * 200);
       }
@@ -462,7 +665,7 @@
       }, playerAbilityTimeout);
       throwSomething({
         imgUrl: "/assets/nimbra/tornado.png",
-        width: "25vw",
+        width: "21vw",
         speed: 20,
         class: "tornado",
         bottom: window.innerWidth * 0.01,
@@ -540,7 +743,7 @@
       lastTime = timestamp;
       if (movingLeft && playerX > 0) {
         playerX -= playerSpeed * dt;
-      } else if (movingRight && playerX < 50 - 14) {
+      } else if (movingRight && playerX < 45 - 14) {
         playerX += playerSpeed * dt;
       }
       player.style.left = `${playerX}vw`;
@@ -611,8 +814,6 @@
       }
     });
 
-    setInterval(() => {
-      console.log(activeAbilities);
-    }, 1000);
+    loadAssets();
   </script>
 </html>
