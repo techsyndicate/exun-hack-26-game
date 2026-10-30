@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Reckoning V: Origins</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      .bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100dvw;
+        height: 100dvh;
+        z-index: -1;
+        object-fit: cover;
+        object-position: bottom center;
+      }
+      .element {
+        position: fixed;
+      }
+      .character {
+        width: 14vw;
+        height: auto;
+      }
+      .player {
+        left: 8vw;
+      }
+      .opponent {
+        right: 8vw;
+        transform: scaleX(-1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main">
+      <img src="/assets/sky_bg.png" class="bg" />
+      <img
+        src="/assets/kael.svg"
+        class="element character player"
+        onclick="movePlayer()"
+      />
+      <img src="/assets/vesh.svg" class="element character opponent" />
+    </div>
+  </body>
+  <script>
+    const bgImage = document.querySelector(".bg");
+    const player = document.querySelector(".player");
+    const opponent = document.querySelector(".opponent");
+    const playerAbilityTimeout = 500;
+
+    let fromBottom = 0;
+    let lastTime = 0;
+    let playerX = 8;
+    let playerY = 0;
+    let playerSpeed = 20;
+    let movingLeft = false;
+    let movingRight = false;
+    let isJumping = false;
+    let abilityCooldown = false;
+
+    function calcBottom() {
+      const scale = Math.max(
+        window.innerWidth / bgImage.naturalWidth,
+        window.innerHeight / bgImage.naturalHeight
+      );
+      const displayedHeight = bgImage.naturalHeight * scale;
+      fromBottom = displayedHeight * 0.126;
+      const allElements = document.querySelectorAll(".element");
+      for (const element of allElements) {
+        element.style.bottom = `${fromBottom}px`;
+      }
+    }
+
+    window.onload = calcBottom;
+    window.onresize = calcBottom;
+    requestAnimationFrame(gameLoop);
+
+    // BHAYANKAR ABILITIES
+
+    function castFireball() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+
+      const fireball = document.createElement("img");
+      let fireballX = playerX + 14;
+      fireball.src = "/assets/kael/fireball.png";
+      fireball.className = "element";
+      fireball.style.width = "5vw";
+      fireball.style.left = `${fireballX}vw`;
+      fireball.style.bottom = `${
+        fromBottom + 0.05 * window.innerWidth + playerY
+      }px`;
+      document.body.appendChild(fireball);
+
+      const fireballSpeed = 55;
+      function moveFireball() {
+        fireballX += fireballSpeed * (1 / 60);
+        fireball.style.left = `${fireballX}vw`;
+
+        if (fireballX < 100) {
+          requestAnimationFrame(moveFireball);
+        } else {
+          document.body.removeChild(fireball);
+        }
+      }
+
+      requestAnimationFrame(moveFireball);
+    }
+
+    function castMeteorShower() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      for (let i = 0; i < 3; i++) {
+        const meteor = document.createElement("img");
+        let meteorX = 100;
+        let meteorY = 0.75 * window.innerHeight - i * 0.16 * window.innerHeight;
+        let lastTimeMeteor = null;
+        meteor.src = "/assets/kael/meteor.png";
+        meteor.className = "element";
+        meteor.style.width = "5vw";
+        meteor.style.left = `${meteorX}vw`;
+        meteor.style.bottom = `${meteorY}px`;
+        document.body.appendChild(meteor);
+
+        const meteorSpeed = 50;
+        function moveMeteor(timestamp) {
+          if (lastTimeMeteor == null) lastTimeMeteor = timestamp;
+          const dt = (timestamp - lastTimeMeteor) / 1000;
+          lastTimeMeteor = timestamp;
+          meteorX -= meteorSpeed * dt;
+          meteorY -= 0.4 * window.innerHeight * dt;
+          meteor.style.left = `${meteorX}vw`;
+          meteor.style.bottom = `${meteorY}px`;
+
+          if (meteorX > -5) {
+            requestAnimationFrame(moveMeteor);
+          } else {
+            document.body.removeChild(meteor);
+          }
+        }
+        setTimeout(() => {
+          requestAnimationFrame(moveMeteor);
+        }, i * 200);
+      }
+    }
+
+    function castMolotov() {
+
+    }
+
+    function gameLoop(timestamp) {
+      const dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+      if (movingLeft && playerX > 0) {
+        playerX -= playerSpeed * dt;
+      } else if (movingRight && playerX < 100 - 14) {
+        playerX += playerSpeed * dt;
+      }
+      player.style.left = `${playerX}vw`;
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "a") {
+        movingLeft = true;
+        e.preventDefault();
+      } else if (e.key === "d") {
+        movingRight = true;
+        e.preventDefault();
+      } else if (e.key === "w") {
+        if (!isJumping) {
+          isJumping = true;
+          let maxJumpHeight = 0.08 * window.innerWidth;
+          const jumpDuration = 0.45;
+          const jumpStartTime = performance.now();
+          function jumpLoop(currentTime) {
+            const elapsed = (currentTime - jumpStartTime) / 1000;
+            if (elapsed < jumpDuration) {
+              playerY =
+                maxJumpHeight * Math.sin((elapsed / jumpDuration) * Math.PI);
+              player.style.bottom = `${fromBottom + playerY}px`;
+              requestAnimationFrame(jumpLoop);
+            } else {
+              player.style.bottom = `${fromBottom}px`;
+              isJumping = false;
+            }
+          }
+          requestAnimationFrame(jumpLoop);
+        }
+      } else if (e.key === "f") {
+        castFireball();
+      } else if (e.key === "g") {
+        castMeteorShower();
+      }
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "a") {
+        movingLeft = false;
+      } else if (e.key === "d") {
+        movingRight = false;
+      }
+    });
+  </script>
+</html>
