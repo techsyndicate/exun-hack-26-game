@@ -34,6 +34,59 @@
         right: 8vw;
         transform: scaleX(-1);
       }
+      .blinking {
+        animation-name: blink;
+        animation-duration: 0.4s;
+        animation-timing-function: linear;
+      }
+      .spinning {
+        animation-name: spinning;
+        animation-duration: 0.6s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+      }
+      .tornado {
+        animation-name: tornado;
+        animation-duration: 0.5s;
+        animation-iteration-count: infinite;
+        animation-timing-function: steps(4);
+      }
+
+      @keyframes blink {
+        0% {
+          opacity: 1;
+        }
+        25% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        75% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes spinning {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes tornado {
+        0% {
+          transform: scaleX(1);
+        }
+        50% {
+          transform: scaleX(-1);
+        }
+      }
     </style>
   </head>
   <body>
@@ -76,11 +129,112 @@
       }
     }
 
+    function blink(el) {
+      el.classList.remove("blinking");
+      el.classList.add("blinking");
+      setTimeout(() => {
+        el.classList.remove("blinking");
+      }, 400);
+    }
+    function isTouching(el1, el2) {
+      const rect1 = el1.getBoundingClientRect();
+      const rect2 = el2.getBoundingClientRect();
+      return !(
+        rect1.top > rect2.bottom ||
+        rect1.bottom < rect2.top ||
+        rect1.left > rect2.right ||
+        rect1.right < rect2.left
+      );
+    }
     window.onload = calcBottom;
     window.onresize = calcBottom;
     requestAnimationFrame(gameLoop);
 
     // BHAYANKAR ABILITIES
+
+    function throwSomething(options) {
+      const toThrow = document.createElement("img");
+      let toThrowX = playerX + 14;
+      toThrow.src = options.imgUrl;
+      toThrow.className = "element";
+      toThrow.style.width = options.width ?? "5vw";
+      toThrow.style.left = `${toThrowX}vw`;
+      toThrow.style.bottom = `${
+        fromBottom + (options.bottom ?? 0.05 * window.innerWidth) + playerY
+      }px`;
+      if (options.class) {
+        toThrow.classList.add(options.class);
+      }
+      document.body.appendChild(toThrow);
+
+      const toThrowSpeed = options.speed ?? 65;
+      function moveObject() {
+        toThrowX += toThrowSpeed * (1 / 60);
+        toThrow.style.left = `${toThrowX}vw`;
+        if (isTouching(toThrow, opponent)) {
+          blink(opponent);
+          document.body.removeChild(toThrow);
+          return;
+        }
+        if (toThrowX < 100) {
+          requestAnimationFrame(moveObject);
+        } else {
+          document.body.removeChild(toThrow);
+        }
+      }
+      requestAnimationFrame(moveObject);
+    }
+
+    function projectSomething(options) {
+      const toThrow = document.createElement("img");
+      let toThrowX = playerX + 14;
+      let toThrowY = fromBottom + 0.05 * window.innerWidth + playerY;
+      toThrow.src = options.imgUrl;
+      toThrow.className = "element";
+      toThrow.style.width = options.width ?? "5vw";
+      toThrow.style.left = `${toThrowX}vw`;
+      toThrow.style.bottom = `${toThrowY}px`;
+      if (options.class) {
+        toThrow.classList.add(options.class);
+      }
+      document.body.appendChild(toThrow);
+
+      let angle = options.angle ?? Math.PI / 4;
+      let speed = ((options.speed ?? 70) * window.innerWidth) / 100;
+      const gravity = window.innerWidth;
+
+      const initialVelocityX = speed * Math.cos(angle);
+      const initialVelocityY = speed * Math.sin(angle);
+      let startTime = null;
+
+      function moveObject(timestamp) {
+        if (startTime === null) startTime = timestamp;
+        const timeElapsed = (timestamp - startTime) / 1000;
+        const currentX =
+          toThrowX +
+          ((initialVelocityX * timeElapsed) / window.innerWidth) * 100;
+        const currentY =
+          toThrowY +
+          initialVelocityY * timeElapsed -
+          0.5 * gravity * timeElapsed ** 2;
+        toThrow.style.left = `${currentX}vw`;
+        toThrow.style.bottom = `${currentY}px`;
+        if (isTouching(toThrow, opponent)) {
+          blink(opponent);
+          toThrow.remove();
+          return;
+        }
+        if (currentX < 100 && currentX > -10 && currentY > fromBottom) {
+          requestAnimationFrame(moveObject);
+        } else {
+          toThrow.remove();
+        }
+      }
+
+      requestAnimationFrame(moveObject);
+    }
+
+    // KAEL
 
     function castFireball() {
       if (abilityCooldown) return;
@@ -88,31 +242,11 @@
       setTimeout(() => {
         abilityCooldown = false;
       }, playerAbilityTimeout);
-
-      const fireball = document.createElement("img");
-      let fireballX = playerX + 14;
-      fireball.src = "/assets/kael/fireball.png";
-      fireball.className = "element";
-      fireball.style.width = "5vw";
-      fireball.style.left = `${fireballX}vw`;
-      fireball.style.bottom = `${
-        fromBottom + 0.05 * window.innerWidth + playerY
-      }px`;
-      document.body.appendChild(fireball);
-
-      const fireballSpeed = 55;
-      function moveFireball() {
-        fireballX += fireballSpeed * (1 / 60);
-        fireball.style.left = `${fireballX}vw`;
-
-        if (fireballX < 100) {
-          requestAnimationFrame(moveFireball);
-        } else {
-          document.body.removeChild(fireball);
-        }
-      }
-
-      requestAnimationFrame(moveFireball);
+      throwSomething({
+        imgUrl: "/assets/kael/fireball.png",
+        width: "6vw",
+        speed: 65,
+      });
     }
 
     function castMeteorShower() {
@@ -124,7 +258,7 @@
       for (let i = 0; i < 3; i++) {
         const meteor = document.createElement("img");
         let meteorX = 100;
-        let meteorY = 0.75 * window.innerHeight - i * 0.16 * window.innerHeight;
+        let meteorY = 0.88 * window.innerHeight - i * 0.16 * window.innerHeight;
         let lastTimeMeteor = null;
         meteor.src = "/assets/kael/meteor.png";
         meteor.className = "element";
@@ -139,10 +273,15 @@
           const dt = (timestamp - lastTimeMeteor) / 1000;
           lastTimeMeteor = timestamp;
           meteorX -= meteorSpeed * dt;
-          meteorY -= 0.4 * window.innerHeight * dt;
+          meteorY -= 0.6 * window.innerHeight * dt;
           meteor.style.left = `${meteorX}vw`;
           meteor.style.bottom = `${meteorY}px`;
 
+          if (isTouching(meteor, opponent)) {
+            blink(opponent);
+            document.body.removeChild(meteor);
+            return;
+          }
           if (meteorX > -5) {
             requestAnimationFrame(moveMeteor);
           } else {
@@ -155,8 +294,70 @@
       }
     }
 
-    function castMolotov() {
+    function castMolotov() {}
 
+    // BROM
+
+    function castMountain() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      throwSomething({
+        imgUrl: "/assets/brom/mountain.png",
+        width: "14vw",
+        bottom: window.innerWidth * 0.01,
+        speed: 30
+      });
+    }
+
+    function castRock() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      projectSomething({
+        imgUrl: "/assets/brom/rock.png",
+        width: "5vw",
+        angle: Math.PI / 4,
+        speed: 70,
+        class: "spinning",
+      });
+    }
+
+    function castRoots() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      throwSomething({
+        imgUrl: "/assets/brom/roots.png",
+        width: "5vw",
+        speed: 75,
+        class: "spinning",
+      });
+    }
+
+    // NIMBRA
+
+    function castFlood() {}
+
+    function castTornado() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      throwSomething({
+        imgUrl: "/assets/nimbra/tornado.png",
+        width: "25vw",
+        speed: 20,
+        class: "tornado",
+        bottom: window.innerWidth * 0.01,
+      });
     }
 
     function gameLoop(timestamp) {
@@ -181,7 +382,7 @@
       } else if (e.key === "w") {
         if (!isJumping) {
           isJumping = true;
-          let maxJumpHeight = 0.08 * window.innerWidth;
+          let maxJumpHeight = 0.1 * window.innerWidth;
           const jumpDuration = 0.45;
           const jumpStartTime = performance.now();
           function jumpLoop(currentTime) {
@@ -202,6 +403,14 @@
         castFireball();
       } else if (e.key === "g") {
         castMeteorShower();
+      } else if (e.key === "m") {
+        castMountain();
+      } else if (e.key === "r") {
+        castRock();
+      } else if (e.key === "t") {
+        castRoots();
+      } else if (e.key === "y") {
+        castTornado();
       }
     });
 
