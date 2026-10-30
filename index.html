@@ -20,6 +20,9 @@
         object-fit: cover;
         object-position: bottom center;
       }
+      .element-parent {
+        position: fixed;
+      }
       .element {
         position: fixed;
       }
@@ -50,6 +53,12 @@
         animation-duration: 0.5s;
         animation-iteration-count: infinite;
         animation-timing-function: steps(4);
+      }
+      .sparkle {
+        animation-name: sparkle;
+        animation-duration: 0.3s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
       }
 
       @keyframes blink {
@@ -87,17 +96,29 @@
           transform: scaleX(-1);
         }
       }
+
+      @keyframes sparkle {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="main">
       <img src="/assets/sky_bg.png" class="bg" />
-      <img
-        src="/assets/kael.svg"
-        class="element character player"
-        onclick="movePlayer()"
-      />
-      <img src="/assets/vesh.svg" class="element character opponent" />
+      <div class="element-parent player" id="player">
+        <img src="/assets/vesh.svg" class="character" onclick="movePlayer()" />
+      </div>
+      <div class="element-parent opponent" id="opponent">
+        <img src="/assets/vesh.svg" class="character" />
+      </div>
     </div>
   </body>
   <script>
@@ -105,6 +126,8 @@
     const player = document.querySelector(".player");
     const opponent = document.querySelector(".opponent");
     const playerAbilityTimeout = 500;
+    const shieldCooldownTime = 15000;
+    const activeAbilities = new Set();
 
     let fromBottom = 0;
     let lastTime = 0;
@@ -115,6 +138,7 @@
     let movingRight = false;
     let isJumping = false;
     let abilityCooldown = false;
+    let shieldCooldown = false;
 
     function calcBottom() {
       const scale = Math.max(
@@ -124,8 +148,12 @@
       const displayedHeight = bgImage.naturalHeight * scale;
       fromBottom = displayedHeight * 0.126;
       const allElements = document.querySelectorAll(".element");
+      const allParents = document.querySelectorAll(".element-parent");
       for (const element of allElements) {
         element.style.bottom = `${fromBottom}px`;
+      }
+      for (const parent of allParents) {
+        parent.style.bottom = `${fromBottom}px`;
       }
     }
 
@@ -146,6 +174,7 @@
         rect1.right < rect2.left
       );
     }
+
     window.onload = calcBottom;
     window.onresize = calcBottom;
     requestAnimationFrame(gameLoop);
@@ -154,17 +183,18 @@
 
     function throwSomething(options) {
       const toThrow = document.createElement("img");
-      let toThrowX = playerX + 14;
+      let toThrowX = playerX + 13;
       toThrow.src = options.imgUrl;
-      toThrow.className = "element";
+      toThrow.className = "element playerAbility";
       toThrow.style.width = options.width ?? "5vw";
       toThrow.style.left = `${toThrowX}vw`;
       toThrow.style.bottom = `${
-        fromBottom + (options.bottom ?? 0.05 * window.innerWidth) + playerY
+        fromBottom + (options.bottom ?? 0.05 * window.innerWidth + playerY)
       }px`;
       if (options.class) {
         toThrow.classList.add(options.class);
       }
+      activeAbilities.add(toThrow);
       document.body.appendChild(toThrow);
 
       const toThrowSpeed = options.speed ?? 65;
@@ -173,13 +203,15 @@
         toThrow.style.left = `${toThrowX}vw`;
         if (isTouching(toThrow, opponent)) {
           blink(opponent);
-          document.body.removeChild(toThrow);
+          activeAbilities.delete(toThrow);
+          toThrow.remove();
           return;
         }
         if (toThrowX < 100) {
           requestAnimationFrame(moveObject);
         } else {
-          document.body.removeChild(toThrow);
+          activeAbilities.delete(toThrow);
+          toThrow.remove();
         }
       }
       requestAnimationFrame(moveObject);
@@ -187,21 +219,23 @@
 
     function projectSomething(options) {
       const toThrow = document.createElement("img");
-      let toThrowX = playerX + 14;
-      let toThrowY = fromBottom + 0.05 * window.innerWidth + playerY;
+      let toThrowX = options.left ?? playerX + 14;
+      let toThrowY =
+        options.bottom ?? fromBottom + 0.05 * window.innerWidth + playerY;
       toThrow.src = options.imgUrl;
-      toThrow.className = "element";
+      toThrow.className = "element playerAbility";
       toThrow.style.width = options.width ?? "5vw";
       toThrow.style.left = `${toThrowX}vw`;
       toThrow.style.bottom = `${toThrowY}px`;
       if (options.class) {
         toThrow.classList.add(options.class);
       }
+      activeAbilities.add(toThrow);
       document.body.appendChild(toThrow);
 
       let angle = options.angle ?? Math.PI / 4;
       let speed = ((options.speed ?? 70) * window.innerWidth) / 100;
-      const gravity = window.innerWidth;
+      const gravity = options.gravity ?? window.innerWidth;
 
       const initialVelocityX = speed * Math.cos(angle);
       const initialVelocityY = speed * Math.sin(angle);
@@ -221,17 +255,57 @@
         toThrow.style.bottom = `${currentY}px`;
         if (isTouching(toThrow, opponent)) {
           blink(opponent);
+          activeAbilities.delete(toThrow);
           toThrow.remove();
           return;
         }
         if (currentX < 100 && currentX > -10 && currentY > fromBottom) {
           requestAnimationFrame(moveObject);
         } else {
+          activeAbilities.delete(toThrow);
           toThrow.remove();
         }
       }
 
       requestAnimationFrame(moveObject);
+    }
+
+    function castShield() {
+      if (shieldCooldown) return;
+      shieldCooldown = true;
+      setTimeout(() => {
+        shieldCooldown = false;
+      }, shieldCooldownTime);
+      const shieldImage = document.createElement("img");
+      shieldImage.src = "/assets/shield.png";
+      shieldImage.style.width = "6vw";
+      shieldImage.style.bottom = `2vw`;
+      shieldImage.style.left = `14vw`;
+      shieldImage.style.position = "absolute";
+      document.querySelector("#player").appendChild(shieldImage);
+      setTimeout(() => {
+        document.querySelector("#player").removeChild(shieldImage);
+      }, 5000);
+      let pehleWala = 0;
+      function checkCollision(timestamp) {
+        if (pehleWala === 0) pehleWala = timestamp;
+        const dt = timestamp - pehleWala;
+        for (const ability of activeAbilities) {
+          if (
+            !ability.classList.contains("playerAbility") &&
+            isTouching(ability, shieldImage)
+          ) {
+            activeAbilities.delete(ability);
+            ability.remove();
+          }
+        }
+        if (dt > 5000) {
+          return;
+        } else {
+          requestAnimationFrame(checkCollision);
+        }
+      }
+      requestAnimationFrame(checkCollision);
     }
 
     // KAEL
@@ -261,10 +335,11 @@
         let meteorY = 0.88 * window.innerHeight - i * 0.16 * window.innerHeight;
         let lastTimeMeteor = null;
         meteor.src = "/assets/kael/meteor.png";
-        meteor.className = "element";
+        meteor.className = "element playerAbility";
         meteor.style.width = "5vw";
         meteor.style.left = `${meteorX}vw`;
         meteor.style.bottom = `${meteorY}px`;
+        activeAbilities.add(meteor);
         document.body.appendChild(meteor);
 
         const meteorSpeed = 50;
@@ -279,13 +354,15 @@
 
           if (isTouching(meteor, opponent)) {
             blink(opponent);
-            document.body.removeChild(meteor);
+            activeAbilities.delete(meteor);
+            meteor.remove();
             return;
           }
           if (meteorX > -5) {
             requestAnimationFrame(moveMeteor);
           } else {
-            document.body.removeChild(meteor);
+            activeAbilities.delete(meteor);
+            meteor.remove();
           }
         }
         setTimeout(() => {
@@ -294,7 +371,20 @@
       }
     }
 
-    function castMolotov() {}
+    function castMolotov() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      projectSomething({
+        imgUrl: "/assets/kael/meteor.png",
+        width: "5vw",
+        angle: Math.PI / 4,
+        speed: 70,
+        class: "spinning",
+      });
+    }
 
     // BROM
 
@@ -308,7 +398,7 @@
         imgUrl: "/assets/brom/mountain.png",
         width: "14vw",
         bottom: window.innerWidth * 0.01,
-        speed: 30
+        speed: 30,
       });
     }
 
@@ -343,7 +433,26 @@
 
     // NIMBRA
 
-    function castFlood() {}
+    function castFlood() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          projectSomething({
+            imgUrl: "/assets/nimbra/flood.png",
+            width: "9vw",
+            speed: 30,
+            bottom: window.innerHeight,
+            left: i * 18 + 10,
+            angle: -(Math.PI / 2),
+            gravity: 0
+          });
+        }, i * 200);
+      }
+    }
 
     function castTornado() {
       if (abilityCooldown) return;
@@ -360,12 +469,78 @@
       });
     }
 
+    function castWaterDrop() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      projectSomething({
+        imgUrl: "/assets/nimbra/water_drop.png",
+        width: "5vw",
+        angle: (5.1 * Math.PI) / 4,
+        speed: 70,
+        bottom: 0.88 * window.innerHeight,
+        left: 95,
+        gravity: 0,
+      });
+    }
+
+    // VESH
+
+    function castHeal() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      const healImage = document.createElement("img");
+      healImage.src = "/assets/vesh/heal.png";
+      healImage.className = "sparkle";
+      healImage.style.width = "6vw";
+      healImage.style.bottom = `2vw`;
+      healImage.style.left = `5vw`;
+      healImage.style.position = "absolute";
+      document.querySelector("#player").appendChild(healImage);
+      setTimeout(() => {
+        document.querySelector("#player").removeChild(healImage);
+      }, 600);
+    }
+
+    function castMoonBlade() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      throwSomething({
+        imgUrl: "/assets/vesh/moon_blade.png",
+        width: "4vw",
+        speed: 65,
+        class: "spinning",
+      });
+    }
+
+    function castBall() {
+      if (abilityCooldown) return;
+      abilityCooldown = true;
+      setTimeout(() => {
+        abilityCooldown = false;
+      }, playerAbilityTimeout);
+      throwSomething({
+        imgUrl: "/assets/vesh/ball.png",
+        width: "4vw",
+        speed: 65,
+        class: "spinning",
+      });
+    }
+
     function gameLoop(timestamp) {
       const dt = (timestamp - lastTime) / 1000;
       lastTime = timestamp;
       if (movingLeft && playerX > 0) {
         playerX -= playerSpeed * dt;
-      } else if (movingRight && playerX < 100 - 14) {
+      } else if (movingRight && playerX < 50 - 14) {
         playerX += playerSpeed * dt;
       }
       player.style.left = `${playerX}vw`;
@@ -411,6 +586,20 @@
         castRoots();
       } else if (e.key === "y") {
         castTornado();
+      } else if (e.key === "p") {
+        castWaterDrop();
+      } else if (e.key === "h") {
+        castHeal();
+      } else if (e.key === "b") {
+        castMoonBlade();
+      } else if (e.key === "n") {
+        castBall();
+      } else if (e.key === "x") {
+        castShield();
+      } else if (e.key === "j") {
+        castFlood();
+      } else if (e.key === "l") {
+        castMolotov();
       }
     });
 
@@ -421,5 +610,9 @@
         movingRight = false;
       }
     });
+
+    setInterval(() => {
+      console.log(activeAbilities);
+    }, 1000);
   </script>
 </html>
