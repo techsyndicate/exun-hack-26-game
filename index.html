@@ -7,7 +7,7 @@
     <style>
       @font-face {
         font-family: "Pixeloid Sans";
-        src: url("/assets/fonts/PixeloidSans.ttf") format("truetype");
+        src: url("assets/fonts/PixeloidSans.ttf") format("truetype");
         font-weight: normal;
         font-style: normal;
       }
@@ -206,27 +206,13 @@
         position: fixed;
         top: 1.5vw;
         left: 0;
-        width: 92vw;
+        width: 100vw;
         text-align: center;
         color: white;
         font-size: 2vw;
         text-shadow: 0.2vw 0.2vw 0 black;
         z-index: 500;
         display: none;
-      }
-      .buttons {
-        position: fixed;
-        width: 8vw;
-        height: 100dvh;
-        z-index: 1000;
-        right: 0;
-        top: 0;
-        background: rgba(0, 0, 0, 0.9);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
-        align-items: center;
-        padding: 2vw 0;
       }
       .button {
         background-color: #444;
@@ -245,13 +231,9 @@
         font-family: "Pixeloid Sans", sans-serif;
         touch-action: manipulation;
       }
-      .button:active,
-      .button.pressed {
+      .button:active {
         box-shadow: 0px 0.2vw 0px #999;
         transform: translateY(0.25vw);
-      }
-      .button.cooldown {
-        opacity: 0.35;
       }
       .modal .wideButton {
         width: auto;
@@ -303,7 +285,7 @@
         animation-timing-function: linear;
       }
       .opponent {
-        left: 71vw;
+        left: 78vw;
         transform: scaleX(-1);
         animation-name: updownopp;
         animation-duration: 1.5s;
@@ -469,21 +451,15 @@
       <div class="messageButtons" id="messageButtons"></div>
     </div>
     <div class="hud" id="hud"></div>
-    <div class="buttons">
-      <button class="button" id="btnX" title="Shield">X</button>
-      <button class="button" id="btnY">Y</button>
-      <button class="button" id="btnA">A</button>
-      <button class="button" id="btnB">B</button>
-    </div>
     <div class="main">
-      <img src="/assets/sky_bg.png" class="bg" />
+      <img src="assets/sky_bg.png" class="bg" />
       <div class="element-parent player" id="player">
         <div class="hpBar"><div class="hpFill"></div></div>
-        <img src="/assets/vesh.svg" class="character" />
+        <img src="assets/vesh.svg" class="character" />
       </div>
       <div class="element-parent opponent" id="opponent">
         <div class="hpBar"><div class="hpFill"></div></div>
-        <img src="/assets/vesh.svg" class="character" />
+        <img src="assets/vesh.svg" class="character" />
       </div>
     </div>
   </body>
@@ -493,19 +469,7 @@
     const selectModal = document.querySelector("#selectModal");
     const messageModal = document.querySelector("#messageModal");
     const hud = document.querySelector("#hud");
-    const shieldButton = document.querySelector("#btnX");
-    const abilityButtons = [
-      document.querySelector("#btnY"),
-      document.querySelector("#btnA"),
-      document.querySelector("#btnB"),
-    ];
     const abilityKeys = ["Y", "A", "B"];
-    const sideButtons = {
-      X: shieldButton,
-      Y: abilityButtons[0],
-      A: abilityButtons[1],
-      B: abilityButtons[2],
-    };
     const activeAbilities = new Set();
 
     function loadSound(src, loop = false) {
@@ -515,18 +479,26 @@
       return sound;
     }
 
-    const menuMusic = loadSound("/assets/audio/menu-music.mp3", true);
-    const bgMusic = loadSound("/assets/audio/bg-music.mp3", true);
-    const quakeSound = loadSound("/assets/audio/earthquake.mp3");
-    const slashSound = loadSound("/assets/audio/slash.mp3");
+    const menuMusic = loadSound("assets/audio/menu-music.mp3", true);
+    const bgMusic = loadSound("assets/audio/bg-music.mp3", true);
+    const quakeSound = loadSound("assets/audio/earthquake.mp3");
+    const slashSound = loadSound("assets/audio/slash.mp3");
     let currentMusic = null;
 
-    const CONTROLLER_BUTTONS = ["X", "Y", "A", "B"];
-    const JOYSTICK_ROTATION = -90;
+    const PAD = {
+      A: 0,
+      B: 1,
+      X: 2,
+      Y: 3,
+      START: 9,
+      STICK: 10,
+      UP: 12,
+      LEFT: 14,
+      RIGHT: 15,
+    };
     const STICK_DEADZONE = 0.15;
     const STICK_MENU_THRESHOLD = 0.6;
     const STICK_JUMP_THRESHOLD = 0.6;
-    const CONTROLLER_TIMEOUT = 500;
     const MESSAGE_INPUT_DELAY = 600;
 
     const ABILITY_COOLDOWN = 500;
@@ -534,13 +506,13 @@
     const SHIELD_DURATION = 5000;
     const MAX_HP = 100;
     const CHARACTER_WIDTH = 14;
-    const MIRROR_WIDTH = 93;
+    const MIRROR_WIDTH = 100;
     const PLAYER_START_X = 8;
     const PLAYER_MIN_X = 0;
     const PLAYER_MAX_X = 45 - CHARACTER_WIDTH;
-    const OPPONENT_START_X = 71;
-    const OPPONENT_MIN_X = 50;
-    const OPPONENT_MAX_X = 92 - CHARACTER_WIDTH;
+    const OPPONENT_START_X = 78;
+    const OPPONENT_MIN_X = 55;
+    const OPPONENT_MAX_X = 100 - CHARACTER_WIDTH;
     const LOREM =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
@@ -548,45 +520,45 @@
       {
         id: "brom",
         name: "Brom",
-        img: "/assets/brom.png",
+        img: "assets/brom.png",
         description: LOREM,
         abilities: [
-          { name: "Mountain", icon: "/assets/brom/mountain.png", cast: castMountain, sound: quakeSound },
-          { name: "Rock", icon: "/assets/brom/rock.png", cast: castRock },
-          { name: "Roots", icon: "/assets/brom/roots.png", cast: castRoots },
+          { name: "Mountain", icon: "assets/brom/mountain.png", cast: castMountain, sound: quakeSound },
+          { name: "Rock", icon: "assets/brom/rock.png", cast: castRock },
+          { name: "Roots", icon: "assets/brom/roots.png", cast: castRoots },
         ],
       },
       {
         id: "kael",
         name: "Kael",
-        img: "/assets/kael.svg",
+        img: "assets/kael.svg",
         description: LOREM,
         abilities: [
-          { name: "Fireball", icon: "/assets/kael/fireball.png", cast: castFireball },
-          { name: "Meteor Shower", icon: "/assets/kael/meteor.png", cast: castMeteorShower, sound: quakeSound },
-          { name: "Molotov", icon: "/assets/kael/meteor.png", cast: castMolotov },
+          { name: "Fireball", icon: "assets/kael/fireball.png", cast: castFireball },
+          { name: "Meteor Shower", icon: "assets/kael/meteor.png", cast: castMeteorShower, sound: quakeSound },
+          { name: "Molotov", icon: "assets/kael/meteor.png", cast: castMolotov },
         ],
       },
       {
         id: "nimbra",
         name: "Nimbra",
-        img: "/assets/nimbra.png",
+        img: "assets/nimbra.png",
         description: LOREM,
         abilities: [
-          { name: "Flood", icon: "/assets/nimbra/flood.png", cast: castFlood, sound: quakeSound },
-          { name: "Tornado", icon: "/assets/nimbra/tornado.png", cast: castTornado, sound: quakeSound },
-          { name: "Water Drop", icon: "/assets/nimbra/water_drop.png", cast: castWaterDrop },
+          { name: "Flood", icon: "assets/nimbra/flood.png", cast: castFlood, sound: quakeSound },
+          { name: "Tornado", icon: "assets/nimbra/tornado.png", cast: castTornado, sound: quakeSound },
+          { name: "Water Drop", icon: "assets/nimbra/water_drop.png", cast: castWaterDrop },
         ],
       },
       {
         id: "vesh",
         name: "Vesh",
-        img: "/assets/vesh.svg",
+        img: "assets/vesh.svg",
         description: LOREM,
         abilities: [
-          { name: "Heal", icon: "/assets/vesh/heal.png", cast: castHeal, heal: true },
-          { name: "Moon Blade", icon: "/assets/vesh/moon_blade.png", cast: castMoonBlade },
-          { name: "Ball", icon: "/assets/vesh/ball.png", cast: castBall },
+          { name: "Heal", icon: "assets/vesh/heal.png", cast: castHeal, heal: true },
+          { name: "Moon Blade", icon: "assets/vesh/moon_blade.png", cast: castMoonBlade },
+          { name: "Ball", icon: "assets/vesh/ball.png", cast: castBall },
         ],
       },
     ];
@@ -598,24 +570,24 @@
     ];
 
     const imageAssets = [
-      "/assets/vesh.svg",
-      "/assets/brom.png",
-      "/assets/nimbra.png",
-      "/assets/kael.svg",
-      "/assets/kael/fireball.png",
-      "/assets/kael/meteor.png",
-      "/assets/kael/molotov.png",
-      "/assets/brom/mountain.png",
-      "/assets/brom/rock.png",
-      "/assets/brom/roots.png",
-      "/assets/nimbra/flood.png",
-      "/assets/nimbra/tornado.png",
-      "/assets/nimbra/water_drop.png",
-      "/assets/vesh/heal.png",
-      "/assets/vesh/moon_blade.png",
-      "/assets/vesh/ball.png",
-      "/assets/shield.png",
-      "/assets/sky_bg.png",
+      "assets/vesh.svg",
+      "assets/brom.png",
+      "assets/nimbra.png",
+      "assets/kael.svg",
+      "assets/kael/fireball.png",
+      "assets/kael/meteor.png",
+      "assets/kael/molotov.png",
+      "assets/brom/mountain.png",
+      "assets/brom/rock.png",
+      "assets/brom/roots.png",
+      "assets/nimbra/flood.png",
+      "assets/nimbra/tornado.png",
+      "assets/nimbra/water_drop.png",
+      "assets/vesh/heal.png",
+      "assets/vesh/moon_blade.png",
+      "assets/vesh/ball.png",
+      "assets/shield.png",
+      "assets/sky_bg.png",
     ];
 
     function createFighter(el, dir) {
@@ -655,11 +627,9 @@
     let opponents = [];
     let currentLevel = 0;
     let messageShownAt = 0;
-    let joystickX = 0;
-    let lastControllerAt = 0;
-    let lastStickDir = 0;
-    let controllerButtons = [false, false, false, false];
-    let stickWasPressed = false;
+    let padX = 0;
+    let padButtons = [];
+    let lastPadDir = 0;
 
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const rand = (min, max) => min + Math.random() * (max - min);
@@ -764,7 +734,7 @@
       const list = document.querySelector("#sorcererAbilities");
       list.innerHTML = "";
       const items = [
-        { key: "X", name: "Shield", icon: "/assets/shield.png" },
+        { key: "X", name: "Shield", icon: "assets/shield.png" },
         ...sorcerer.abilities.map((ability, i) => ({
           key: abilityKeys[i],
           ...ability,
@@ -805,9 +775,6 @@
       opponents = SORCERERS.filter((s) => s !== player.sorcerer);
       currentLevel = 0;
       player.img.src = player.sorcerer.img;
-      player.sorcerer.abilities.forEach((ability, i) => {
-        abilityButtons[i].title = ability.name;
-      });
       selectModal.style.display = "none";
       showLevelIntro();
     }
@@ -1089,7 +1056,7 @@
       f.shieldReadyAt = now + SHIELD_COOLDOWN;
       playSound(slashSound);
       const shieldImage = document.createElement("img");
-      shieldImage.src = "/assets/shield.png";
+      shieldImage.src = "assets/shield.png";
       shieldImage.className = "effect";
       shieldImage.style.width = "6vw";
       shieldImage.style.bottom = `2vw`;
@@ -1127,7 +1094,7 @@
 
     function castFireball(f) {
       throwSomething(f, {
-        imgUrl: "/assets/kael/fireball.png",
+        imgUrl: "assets/kael/fireball.png",
         width: 6,
         speed: 65,
         damage: 10,
@@ -1141,7 +1108,7 @@
         setTimeout(() => {
           if (!isRoundActive(round)) return;
           const width = 5;
-          const meteor = createProjectile(f, "/assets/kael/meteor.png", width);
+          const meteor = createProjectile(f, "assets/kael/meteor.png", width);
           let meteorX = sideX(f, 100, width);
           let meteorY =
             0.88 * window.innerHeight - i * 0.16 * window.innerHeight;
@@ -1172,7 +1139,7 @@
 
     function castMolotov(f) {
       projectSomething(f, {
-        imgUrl: "/assets/kael/meteor.png",
+        imgUrl: "assets/kael/meteor.png",
         width: 5,
         angle: Math.PI / 4,
         speed: 70,
@@ -1183,7 +1150,7 @@
 
     function castMountain(f) {
       throwSomething(f, {
-        imgUrl: "/assets/brom/mountain.png",
+        imgUrl: "assets/brom/mountain.png",
         width: 14,
         bottom: window.innerWidth * 0.01,
         speed: 30,
@@ -1193,7 +1160,7 @@
 
     function castRock(f) {
       projectSomething(f, {
-        imgUrl: "/assets/brom/rock.png",
+        imgUrl: "assets/brom/rock.png",
         width: 5,
         angle: Math.PI / 4,
         speed: 70,
@@ -1204,7 +1171,7 @@
 
     function castRoots(f) {
       throwSomething(f, {
-        imgUrl: "/assets/brom/roots.png",
+        imgUrl: "assets/brom/roots.png",
         width: 5,
         speed: 75,
         class: "spinning",
@@ -1219,7 +1186,7 @@
         setTimeout(() => {
           if (!isRoundActive(round)) return;
           projectSomething(f, {
-            imgUrl: "/assets/nimbra/flood.png",
+            imgUrl: "assets/nimbra/flood.png",
             width: 9,
             speed: 30,
             bottom: window.innerHeight,
@@ -1234,7 +1201,7 @@
 
     function castTornado(f) {
       throwSomething(f, {
-        imgUrl: "/assets/nimbra/tornado.png",
+        imgUrl: "assets/nimbra/tornado.png",
         width: 21,
         speed: 20,
         class: "tornado",
@@ -1245,7 +1212,7 @@
 
     function castWaterDrop(f) {
       projectSomething(f, {
-        imgUrl: "/assets/nimbra/water_drop.png",
+        imgUrl: "assets/nimbra/water_drop.png",
         width: 5,
         angle: (5.1 * Math.PI) / 4,
         speed: 70,
@@ -1259,7 +1226,7 @@
     function castHeal(f) {
       healFighter(f, 20);
       const healImage = document.createElement("img");
-      healImage.src = "/assets/vesh/heal.png";
+      healImage.src = "assets/vesh/heal.png";
       healImage.className = "sparkle effect";
       healImage.style.width = "6vw";
       healImage.style.bottom = `2vw`;
@@ -1273,7 +1240,7 @@
 
     function castMoonBlade(f) {
       throwSomething(f, {
-        imgUrl: "/assets/vesh/moon_blade.png",
+        imgUrl: "assets/vesh/moon_blade.png",
         width: 4,
         speed: 65,
         class: "spinning",
@@ -1283,7 +1250,7 @@
 
     function castBall(f) {
       throwSomething(f, {
-        imgUrl: "/assets/vesh/ball.png",
+        imgUrl: "assets/vesh/ball.png",
         width: 4,
         speed: 65,
         class: "spinning",
@@ -1329,20 +1296,63 @@
       }
     }
 
-    function updateButtons(now) {
-      shieldButton.classList.toggle("cooldown", now < player.shieldReadyAt);
-      for (const button of abilityButtons) {
-        button.classList.toggle("cooldown", now < player.abilityReadyAt);
+    function getGamepad() {
+      for (const pad of navigator.getGamepads?.() ?? []) {
+        if (pad && pad.connected) return pad;
       }
+      return null;
+    }
+
+    function pollGamepad(now) {
+      const pad = getGamepad();
+      if (!pad) {
+        padX = 0;
+        padButtons = [];
+        return;
+      }
+
+      const down = pad.buttons.map((button) => button.pressed);
+      const wasDown = padButtons;
+      const justPressed = (i) => down[i] && !wasDown[i];
+      padButtons = down;
+
+      let x = pad.axes[0] ?? 0;
+      const y = pad.axes[1] ?? 0;
+      if (Math.abs(x) < STICK_DEADZONE) x = 0;
+      if (down[PAD.LEFT]) x = -1;
+      if (down[PAD.RIGHT]) x = 1;
+      padX = x;
+
+      const dir = x > STICK_MENU_THRESHOLD ? 1 : x < -STICK_MENU_THRESHOLD ? -1 : 0;
+      const confirm =
+        justPressed(PAD.A) || justPressed(PAD.START) || justPressed(PAD.STICK);
+
+      if (screen === "select") {
+        if (dir !== 0 && dir !== lastPadDir) changeSelection(dir);
+        if (confirm) chooseSorcerer();
+      } else if (screen === "message") {
+        if (now - messageShownAt > MESSAGE_INPUT_DELAY) {
+          const choices = document.querySelectorAll("#messageButtons button");
+          if (confirm) choices[0]?.click();
+          else if (justPressed(PAD.B) && choices.length > 1) choices[1].click();
+        }
+      } else if (gameRunning) {
+        if (y < -STICK_JUMP_THRESHOLD || down[PAD.UP]) jump(player);
+        if (justPressed(PAD.X)) castShield(player);
+        if (justPressed(PAD.Y)) useAbility(player, 0);
+        if (justPressed(PAD.A)) useAbility(player, 1);
+        if (justPressed(PAD.B)) useAbility(player, 2);
+      }
+      lastPadDir = dir;
     }
 
     function gameLoop(timestamp) {
       const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
       lastTime = timestamp;
-      if (timestamp - lastControllerAt > CONTROLLER_TIMEOUT) joystickX = 0;
+      pollGamepad(timestamp);
       if (gameRunning) {
         let move = (movingRight ? 1 : 0) - (movingLeft ? 1 : 0);
-        if (move === 0) move = joystickX;
+        if (move === 0) move = padX;
         player.x = Math.max(
           PLAYER_MIN_X,
           Math.min(PLAYER_MAX_X, player.x + playerSpeed * move * dt)
@@ -1351,89 +1361,7 @@
       }
       player.el.style.left = `${player.x}vw`;
       opponent.el.style.left = `${opponent.x}vw`;
-      updateButtons(timestamp);
       requestAnimationFrame(gameLoop);
-    }
-
-    function pressSideButton(key) {
-      if (key === "X") castShield(player);
-      else useAbility(player, abilityKeys.indexOf(key));
-    }
-
-    for (const [key, button] of Object.entries(sideButtons)) {
-      button.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        pressSideButton(key);
-      });
-    }
-
-    function rotateStick({ x, y }) {
-      const angle = (JOYSTICK_ROTATION * Math.PI) / 180;
-      const cos = Math.round(Math.cos(angle) * 1e6) / 1e6;
-      const sin = Math.round(Math.sin(angle) * 1e6) / 1e6;
-      return { x: x * cos - y * sin, y: x * sin + y * cos };
-    }
-
-    function handleControllerInput(input) {
-      lastControllerAt = performance.now();
-      const { x, y } = rotateStick(input.joystick);
-      joystickX = Math.abs(x) < STICK_DEADZONE ? 0 : x;
-      const stickDir =
-        x > STICK_MENU_THRESHOLD ? 1 : x < -STICK_MENU_THRESHOLD ? -1 : 0;
-      const justPressed = input.buttons.map(
-        (down, i) => down && !controllerButtons[i]
-      );
-      controllerButtons = input.buttons;
-      const stickPressed = input.joystick.pressed === true;
-      const stickJustPressed = stickPressed && !stickWasPressed;
-      stickWasPressed = stickPressed;
-      const confirmPressed = stickJustPressed || justPressed.some(Boolean);
-
-      CONTROLLER_BUTTONS.forEach((key, i) => {
-        sideButtons[key].classList.toggle(
-          "pressed",
-          gameRunning && input.buttons[i]
-        );
-      });
-
-      if (screen === "select") {
-        if (stickDir !== 0 && stickDir !== lastStickDir) {
-          changeSelection(stickDir);
-        }
-        if (confirmPressed) chooseSorcerer();
-      } else if (screen === "message") {
-        const canContinue =
-          performance.now() - messageShownAt > MESSAGE_INPUT_DELAY;
-        if (canContinue && confirmPressed) {
-          document.querySelector("#messageButtons button")?.click();
-        }
-      } else if (gameRunning) {
-        if (y > STICK_JUMP_THRESHOLD) jump(player);
-        justPressed.forEach((pressed, i) => {
-          if (pressed) pressSideButton(CONTROLLER_BUTTONS[i]);
-        });
-      }
-      lastStickDir = stickDir;
-    }
-
-    function connectController() {
-      if (!location.protocol.startsWith("http")) return;
-      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-      const socket = new WebSocket(`${protocol}//${location.host}/ws`);
-      let isFirstMessage = true;
-      socket.addEventListener("message", (event) => {
-        const message = JSON.parse(event.data);
-        if (isFirstMessage) {
-          isFirstMessage = false;
-          return;
-        }
-        if (message.type === "input") handleControllerInput(message.data);
-      });
-      socket.addEventListener("close", () => {
-        joystickX = 0;
-        setTimeout(connectController, 1500);
-      });
-      socket.addEventListener("error", () => socket.close());
     }
 
     document
@@ -1474,6 +1402,5 @@
     });
 
     loadAssets();
-    connectController();
   </script>
 </html>
