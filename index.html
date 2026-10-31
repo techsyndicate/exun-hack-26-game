@@ -493,15 +493,13 @@
     const OPPONENT_START_X = 78;
     const OPPONENT_MIN_X = 55;
     const OPPONENT_MAX_X = 100 - CHARACTER_WIDTH;
-    const LOREM =
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
     const SORCERERS = [
       {
         id: "brom",
         name: "Brom",
         img: "assets/brom.png",
-        description: LOREM,
+        description: "related to earth, and soil",
         abilities: [
           { name: "Mountain", cast: castMountain, sound: quakeSound },
           { name: "Rock", cast: castRock },
@@ -512,7 +510,7 @@
         id: "kael",
         name: "Kael",
         img: "assets/kael.svg",
-        description: LOREM,
+        description: "related to fire, and lava",
         abilities: [
           { name: "Fireball", cast: castFireball },
           { name: "Meteor Shower", cast: castMeteorShower, sound: quakeSound },
@@ -523,7 +521,7 @@
         id: "nimbra",
         name: "Nimbra",
         img: "assets/nimbra.png",
-        description: LOREM,
+        description: "related to water, and air",
         abilities: [
           { name: "Flood", cast: castFlood, sound: quakeSound },
           { name: "Tornado", cast: castTornado, sound: quakeSound },
@@ -534,7 +532,7 @@
         id: "vesh",
         name: "Vesh",
         img: "assets/vesh.svg",
-        description: LOREM,
+        description: "related to soul, and dark magic",
         abilities: [
           { name: "Heal", cast: castHeal, heal: true },
           { name: "Moon Blade", cast: castMoonBlade },
