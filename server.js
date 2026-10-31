@@ -22,6 +22,7 @@ const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".mp3": "audio/mpeg",
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".ttf": "font/ttf",
@@ -81,7 +82,6 @@ function normalizeInput(payload) {
   };
 }
 
-// Only index.html and the assets folder are public, so server.js, .git etc. are never served.
 function serveStatic(request, response) {
   const requestPath = request.url === "/" ? "/index.html" : request.url;
   const decodedPath = decodeURIComponent(requestPath.split("?")[0]);
@@ -99,13 +99,37 @@ function serveStatic(request, response) {
       sendJson(response, 404, { error: "Not found." });
       return;
     }
-    response.writeHead(200, {
+    const headers = {
       "Content-Type":
         MIME_TYPES[path.extname(filePath).toLowerCase()] ||
         "application/octet-stream",
       "Cache-Control": "no-cache",
+      "Accept-Ranges": "bytes",
+    };
+
+    const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range || "");
+    if (!range) {
+      response.writeHead(200, { ...headers, "Content-Length": stats.size });
+      fs.createReadStream(filePath).pipe(response);
+      return;
+    }
+
+    let start = range[1] === "" ? stats.size - Number(range[2]) : Number(range[1]);
+    let end = range[1] !== "" && range[2] !== "" ? Number(range[2]) : stats.size - 1;
+    start = Math.max(0, start);
+    end = Math.min(end, stats.size - 1);
+    if (start > end) {
+      response.writeHead(416, { "Content-Range": `bytes */${stats.size}` });
+      response.end();
+      return;
+    }
+
+    response.writeHead(206, {
+      ...headers,
+      "Content-Range": `bytes ${start}-${end}/${stats.size}`,
+      "Content-Length": end - start + 1,
     });
-    fs.createReadStream(filePath).pipe(response);
+    fs.createReadStream(filePath, { start, end }).pipe(response);
   });
 }
 
@@ -123,9 +147,7 @@ const server = http.createServer((request, response) => {
   sendJson(response, 405, { error: "Method not allowed." });
 });
 
-// Browsers running the game connect to /ws and receive every controller reading.
 const gameSockets = new WebSocketServer({ noServer: true });
-// The ESP32 connects to /controller and streams readings over one open connection.
 const controllerSockets = new WebSocketServer({
   noServer: true,
   maxPayload: MAX_MESSAGE_BYTES,
@@ -164,7 +186,6 @@ controllerSockets.on("connection", (socket, request) => {
 
   socket.on("close", () => {
     console.log(`Controller disconnected (${address})`);
-    // release everything so the player doesn't keep running or holding a button
     latestInput = {
       ...NEUTRAL_INPUT,
       receivedAt: new Date().toISOString(),
@@ -174,7 +195,6 @@ controllerSockets.on("connection", (socket, request) => {
   });
 });
 
-// Drop controllers that vanish without closing (e.g. ESP32 lost power or Wi-Fi).
 const controllerPing = setInterval(() => {
   for (const socket of controllerSockets.clients) {
     if (!socket.isAlive) {

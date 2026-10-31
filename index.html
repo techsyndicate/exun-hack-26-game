@@ -29,7 +29,6 @@
         user-select: none;
         -webkit-user-select: none;
       }
-      /* modal size unit: 1vw on wide screens, shrinks with height so modals always fit */
       :root {
         --u: min(1vw, 1.8dvh);
       }
@@ -508,12 +507,21 @@
       B: abilityButtons[2],
     };
     const activeAbilities = new Set();
-    const menuAudio = new Audio("/assets/audio/menu-music.mp3")
-    const bgAudio = new Audio("/assets/audio/bg-music.mp3")
 
-    // ESP32 controller: buttons[i] from the payload triggers CONTROLLER_BUTTONS[i]
+    function loadSound(src, loop = false) {
+      const sound = new Audio(src);
+      sound.preload = "auto";
+      sound.loop = loop;
+      return sound;
+    }
+
+    const menuMusic = loadSound("/assets/audio/menu-music.mp3", true);
+    const bgMusic = loadSound("/assets/audio/bg-music.mp3", true);
+    const quakeSound = loadSound("/assets/audio/earthquake.mp3");
+    const slashSound = loadSound("/assets/audio/slash.mp3");
+    let currentMusic = null;
+
     const CONTROLLER_BUTTONS = ["X", "Y", "A", "B"];
-    // How the joystick is physically mounted, in degrees counter-clockwise (use -90 for clockwise)
     const JOYSTICK_ROTATION = -90;
     const STICK_DEADZONE = 0.15;
     const STICK_MENU_THRESHOLD = 0.6;
@@ -543,7 +551,7 @@
         img: "/assets/brom.png",
         description: LOREM,
         abilities: [
-          { name: "Mountain", icon: "/assets/brom/mountain.png", cast: castMountain },
+          { name: "Mountain", icon: "/assets/brom/mountain.png", cast: castMountain, sound: quakeSound },
           { name: "Rock", icon: "/assets/brom/rock.png", cast: castRock },
           { name: "Roots", icon: "/assets/brom/roots.png", cast: castRoots },
         ],
@@ -555,7 +563,7 @@
         description: LOREM,
         abilities: [
           { name: "Fireball", icon: "/assets/kael/fireball.png", cast: castFireball },
-          { name: "Meteor Shower", icon: "/assets/kael/meteor.png", cast: castMeteorShower },
+          { name: "Meteor Shower", icon: "/assets/kael/meteor.png", cast: castMeteorShower, sound: quakeSound },
           { name: "Molotov", icon: "/assets/kael/meteor.png", cast: castMolotov },
         ],
       },
@@ -565,8 +573,8 @@
         img: "/assets/nimbra.png",
         description: LOREM,
         abilities: [
-          { name: "Flood", icon: "/assets/nimbra/flood.png", cast: castFlood },
-          { name: "Tornado", icon: "/assets/nimbra/tornado.png", cast: castTornado },
+          { name: "Flood", icon: "/assets/nimbra/flood.png", cast: castFlood, sound: quakeSound },
+          { name: "Tornado", icon: "/assets/nimbra/tornado.png", cast: castTornado, sound: quakeSound },
           { name: "Water Drop", icon: "/assets/nimbra/water_drop.png", cast: castWaterDrop },
         ],
       },
@@ -674,7 +682,6 @@
             }
             loadingModal.style.display = "none";
             showSelect();
-            menuAudio.play();
             requestAnimationFrame(gameLoop);
           }
         };
@@ -718,10 +725,30 @@
       );
     }
 
+    function playMusic(track, restart = false) {
+      for (const music of [menuMusic, bgMusic]) {
+        if (music !== track) music.pause();
+      }
+      currentMusic = track;
+      if (restart) track.currentTime = 0;
+      track.play().catch(() => {});
+    }
+
+    function playSound(sound) {
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    }
+
+    function resumeMusic() {
+      if (currentMusic && currentMusic.paused) {
+        currentMusic.play().catch(() => {});
+      }
+    }
+
     window.onload = calcBottom;
     window.onresize = calcBottom;
-
-    // SCREENS
+    document.addEventListener("pointerdown", resumeMusic);
+    document.addEventListener("keydown", resumeMusic);
 
     function renderSelect() {
       const sorcerer = SORCERERS[selectIndex];
@@ -769,6 +796,7 @@
       hud.style.display = "none";
       selectModal.style.display = "flex";
       renderSelect();
+      playMusic(menuMusic);
     }
 
     function chooseSorcerer() {
@@ -802,6 +830,7 @@
       }
       messageModal.style.display = "flex";
       messageShownAt = performance.now();
+      playMusic(menuMusic);
     }
 
     function showLevelIntro() {
@@ -813,8 +842,6 @@
         buttons: [{ label: "FIGHT", onClick: startLevel }],
       });
     }
-
-    // ROUNDS
 
     function updateHpBar(f) {
       const pct = (f.hp / f.maxHp) * 100;
@@ -870,6 +897,7 @@
       hud.style.display = "block";
       screen = "game";
       gameRunning = true;
+      playMusic(bgMusic, true);
     }
 
     function endRound(won) {
@@ -921,8 +949,6 @@
       f.hp = Math.min(f.maxHp, f.hp + amount);
       updateHpBar(f);
     }
-
-    // BHAYANKAR ABILITIES
 
     function otherFighter(f) {
       return f === player ? opponent : player;
@@ -1051,7 +1077,9 @@
       const now = performance.now();
       if (now < f.abilityReadyAt) return;
       f.abilityReadyAt = now + ABILITY_COOLDOWN;
-      f.sorcerer.abilities[index].cast(f);
+      const ability = f.sorcerer.abilities[index];
+      playSound(ability.sound ?? slashSound);
+      ability.cast(f);
     }
 
     function castShield(f) {
@@ -1059,6 +1087,7 @@
       const now = performance.now();
       if (now < f.shieldReadyAt) return;
       f.shieldReadyAt = now + SHIELD_COOLDOWN;
+      playSound(slashSound);
       const shieldImage = document.createElement("img");
       shieldImage.src = "/assets/shield.png";
       shieldImage.className = "effect";
@@ -1095,8 +1124,6 @@
       }
       requestAnimationFrame(jumpLoop);
     }
-
-    // KAEL
 
     function castFireball(f) {
       throwSomething(f, {
@@ -1154,8 +1181,6 @@
       });
     }
 
-    // BROM
-
     function castMountain(f) {
       throwSomething(f, {
         imgUrl: "/assets/brom/mountain.png",
@@ -1187,8 +1212,6 @@
         damage: 8,
       });
     }
-
-    // NIMBRA
 
     function castFlood(f) {
       const round = roundId;
@@ -1233,8 +1256,6 @@
       });
     }
 
-    // VESH
-
     function castHeal(f) {
       healFighter(f, 20);
       const healImage = document.createElement("img");
@@ -1269,8 +1290,6 @@
         damage: 8,
       });
     }
-
-    // OPPONENT AI
 
     function updateOpponent(dt, now) {
       const o = opponent;
@@ -1336,8 +1355,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // INPUT
-
     function pressSideButton(key) {
       if (key === "X") castShield(player);
       else useAbility(player, abilityKeys.indexOf(key));
@@ -1349,8 +1366,6 @@
         pressSideButton(key);
       });
     }
-
-    // ESP32 CONTROLLER
 
     function rotateStick({ x, y }) {
       const angle = (JOYSTICK_ROTATION * Math.PI) / 180;
@@ -1405,7 +1420,6 @@
       if (!location.protocol.startsWith("http")) return;
       const protocol = location.protocol === "https:" ? "wss:" : "ws:";
       const socket = new WebSocket(`${protocol}//${location.host}/ws`);
-      // the server sends its last stored (possibly old) reading on connect, so skip it
       let isFirstMessage = true;
       socket.addEventListener("message", (event) => {
         const message = JSON.parse(event.data);
