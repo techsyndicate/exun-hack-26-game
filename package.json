@@ -1,0 +1,14 @@
+{
+  "name": "the-reckoning-v-origins",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Reckoning V: Origins, served with an ESP32 joystick controller input API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

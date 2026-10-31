@@ -29,6 +29,15 @@
         user-select: none;
         -webkit-user-select: none;
       }
+      /* modal size unit: 1vw on wide screens, shrinks with height so modals always fit */
+      :root {
+        --u: min(1vw, 1.8dvh);
+      }
+      @media (max-height: 600px) and (orientation: landscape) {
+        :root {
+          --u: min(1.1vw, 2.4dvh);
+        }
+      }
       .modal {
         position: fixed;
         top: 0;
@@ -38,34 +47,48 @@
         background-color: black;
         display: flex;
         justify-content: center;
+        justify-content: safe center;
         align-items: center;
         color: white;
         flex-direction: column;
         text-align: center;
+        overflow-y: auto;
+        padding: calc(var(--u) * 2);
       }
       .modal h1 {
-        font-size: 4vw;
+        font-size: calc(var(--u) * 4);
         margin: 0px;
       }
       .modal h2 {
-        font-size: 2.6vw;
-        margin: 1vw 0 0.5vw;
+        font-size: calc(var(--u) * 2.6);
+        margin: var(--u) 0 calc(var(--u) * 0.5);
       }
       .modal p {
-        font-size: 1.5vw;
-        margin: 1vw 0;
+        font-size: calc(var(--u) * 1.5);
+        margin: var(--u) 0;
+      }
+      .modal .button {
+        flex-shrink: 0;
+        width: calc(var(--u) * 6);
+        height: calc(var(--u) * 6);
+        font-size: calc(var(--u) * 2.1);
+        box-shadow: 0px calc(var(--u) * 0.55) 0px #999;
+      }
+      .modal .button:active {
+        box-shadow: 0px calc(var(--u) * 0.2) 0px #999;
+        transform: translateY(calc(var(--u) * 0.25));
       }
       .overlay {
         background-color: rgba(0, 0, 0, 0.85);
       }
       .loadingBar {
-        border: 0.6vw solid white;
+        border: calc(var(--u) * 0.6) solid white;
         display: flex;
-        margin-top: 2vw;
+        margin-top: calc(var(--u) * 2);
       }
       .loadingBox {
-        width: 1.75vw;
-        height: 1.75vw;
+        width: calc(var(--u) * 1.75);
+        height: calc(var(--u) * 1.75);
       }
       .loadingBoxBlue {
         background-color: rgb(59, 138, 216);
@@ -73,26 +96,32 @@
       .selector {
         display: flex;
         align-items: center;
-        gap: 4vw;
-        margin-top: 2vw;
+        gap: calc(var(--u) * 4);
+        margin-top: calc(var(--u) * 2);
       }
       .sorcererCard {
-        width: 42vw;
+        width: calc(var(--u) * 42);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .sorcererInfo {
         display: flex;
         flex-direction: column;
         align-items: center;
       }
       .sorcererImg {
-        width: 14vw;
-        height: 14vw;
+        flex-shrink: 0;
+        width: calc(var(--u) * 14);
+        height: calc(var(--u) * 14);
         object-fit: contain;
         animation-name: updown;
         animation-duration: 1.5s;
         animation-iteration-count: infinite;
         animation-timing-function: linear;
       }
-      .sorcererDesc {
-        font-size: 1.2vw !important;
+      .modal .sorcererDesc {
+        font-size: calc(var(--u) * 1.2);
         line-height: 1.6;
         color: #bbb;
       }
@@ -100,46 +129,69 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 1vw 2vw;
-        font-size: 1.1vw;
+        gap: var(--u) calc(var(--u) * 2);
+        font-size: calc(var(--u) * 1.1);
       }
       .abilityItem {
         display: flex;
         align-items: center;
-        gap: 0.6vw;
+        gap: calc(var(--u) * 0.6);
       }
       .abilityItem img {
-        width: 2.2vw;
-        height: 2.2vw;
+        width: calc(var(--u) * 2.2);
+        height: calc(var(--u) * 2.2);
         object-fit: contain;
       }
       .key {
         display: inline-flex;
         justify-content: center;
         align-items: center;
-        width: 2vw;
-        height: 2vw;
+        width: calc(var(--u) * 2);
+        height: calc(var(--u) * 2);
         border-radius: 100vw;
         background-color: #444;
-        font-size: 1vw;
+        font-size: var(--u);
       }
       .counter {
-        font-size: 1.2vw;
+        font-size: calc(var(--u) * 1.2);
         color: #888;
-        margin-top: 1.5vw;
+        margin-top: calc(var(--u) * 1.5);
       }
       .messageImg {
-        width: 12vw;
-        height: 12vw;
+        width: calc(var(--u) * 12);
+        height: calc(var(--u) * 12);
         object-fit: contain;
-        margin: 1vw 0;
+        margin: var(--u) 0;
       }
       .flipped {
         transform: scaleX(-1);
       }
       .messageButtons {
         display: flex;
-        gap: 2vw;
+        gap: calc(var(--u) * 2);
+      }
+      @media (max-height: 600px) and (orientation: landscape) {
+        .sorcererCard {
+          width: calc(var(--u) * 58);
+          flex-direction: row;
+          gap: calc(var(--u) * 3);
+        }
+        .sorcererInfo {
+          align-items: flex-start;
+          text-align: left;
+        }
+        .modal .sorcererDesc {
+          font-size: calc(var(--u) * 1.4);
+          margin-top: 0;
+        }
+        .abilityList {
+          justify-content: flex-start;
+          font-size: calc(var(--u) * 1.3);
+        }
+        .counter,
+        .selector {
+          margin-top: var(--u);
+        }
       }
       .bg {
         position: fixed;
@@ -194,25 +246,26 @@
         font-family: "Pixeloid Sans", sans-serif;
         touch-action: manipulation;
       }
-      .button:active {
+      .button:active,
+      .button.pressed {
         box-shadow: 0px 0.2vw 0px #999;
         transform: translateY(0.25vw);
       }
       .button.cooldown {
         opacity: 0.35;
       }
-      .wideButton {
+      .modal .wideButton {
         width: auto;
         height: auto;
-        padding: 1vw 3vw;
-        border-radius: 1vw;
-        font-size: 1.8vw;
-        margin-top: 2.5vw;
+        padding: var(--u) calc(var(--u) * 3);
+        border-radius: var(--u);
+        font-size: calc(var(--u) * 1.8);
+        margin-top: calc(var(--u) * 2.5);
         background-color: rgb(59, 138, 216);
-        box-shadow: 0px 0.55vw 0px rgb(30, 80, 140);
+        box-shadow: 0px calc(var(--u) * 0.55) 0px rgb(30, 80, 140);
       }
-      .wideButton:active {
-        box-shadow: 0px 0.2vw 0px rgb(30, 80, 140);
+      .modal .wideButton:active {
+        box-shadow: 0px calc(var(--u) * 0.2) 0px rgb(30, 80, 140);
       }
       .element-parent {
         position: fixed;
@@ -399,9 +452,11 @@
         <button class="button" id="prevSorcerer">&lt;</button>
         <div class="sorcererCard">
           <img class="sorcererImg" id="sorcererImg" />
-          <h2 id="sorcererName"></h2>
-          <p class="sorcererDesc" id="sorcererDesc"></p>
-          <div class="abilityList" id="sorcererAbilities"></div>
+          <div class="sorcererInfo">
+            <h2 id="sorcererName"></h2>
+            <p class="sorcererDesc" id="sorcererDesc"></p>
+            <div class="abilityList" id="sorcererAbilities"></div>
+          </div>
         </div>
         <button class="button" id="nextSorcerer">&gt;</button>
       </div>
@@ -446,7 +501,23 @@
       document.querySelector("#btnB"),
     ];
     const abilityKeys = ["Y", "A", "B"];
+    const sideButtons = {
+      X: shieldButton,
+      Y: abilityButtons[0],
+      A: abilityButtons[1],
+      B: abilityButtons[2],
+    };
     const activeAbilities = new Set();
+
+    // ESP32 controller: buttons[i] from the payload triggers CONTROLLER_BUTTONS[i]
+    const CONTROLLER_BUTTONS = ["X", "Y", "A", "B"];
+    // How the joystick is physically mounted, in degrees counter-clockwise (use -90 for clockwise)
+    const JOYSTICK_ROTATION = -90;
+    const STICK_DEADZONE = 0.15;
+    const STICK_MENU_THRESHOLD = 0.6;
+    const STICK_JUMP_THRESHOLD = 0.6;
+    const CONTROLLER_TIMEOUT = 500;
+    const MESSAGE_INPUT_DELAY = 600;
 
     const ABILITY_COOLDOWN = 500;
     const SHIELD_COOLDOWN = 15000;
@@ -575,6 +646,12 @@
     let selectIndex = 0;
     let opponents = [];
     let currentLevel = 0;
+    let messageShownAt = 0;
+    let joystickX = 0;
+    let lastControllerAt = 0;
+    let lastStickDir = 0;
+    let controllerButtons = [false, false, false, false];
+    let stickWasPressed = false;
 
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const rand = (min, max) => min + Math.random() * (max - min);
@@ -723,6 +800,7 @@
         container.appendChild(button);
       }
       messageModal.style.display = "flex";
+      messageShownAt = performance.now();
     }
 
     function showLevelIntro() {
@@ -1244,12 +1322,14 @@
     function gameLoop(timestamp) {
       const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
       lastTime = timestamp;
+      if (timestamp - lastControllerAt > CONTROLLER_TIMEOUT) joystickX = 0;
       if (gameRunning) {
-        if (movingLeft && player.x > PLAYER_MIN_X) {
-          player.x -= playerSpeed * dt;
-        } else if (movingRight && player.x < PLAYER_MAX_X) {
-          player.x += playerSpeed * dt;
-        }
+        let move = (movingRight ? 1 : 0) - (movingLeft ? 1 : 0);
+        if (move === 0) move = joystickX;
+        player.x = Math.max(
+          PLAYER_MIN_X,
+          Math.min(PLAYER_MAX_X, player.x + playerSpeed * move * dt)
+        );
         updateOpponent(dt, timestamp);
       }
       player.el.style.left = `${player.x}vw`;
@@ -1260,16 +1340,89 @@
 
     // INPUT
 
-    shieldButton.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      castShield(player);
-    });
-    abilityButtons.forEach((button, i) => {
+    function pressSideButton(key) {
+      if (key === "X") castShield(player);
+      else useAbility(player, abilityKeys.indexOf(key));
+    }
+
+    for (const [key, button] of Object.entries(sideButtons)) {
       button.addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        useAbility(player, i);
+        pressSideButton(key);
       });
-    });
+    }
+
+    // ESP32 CONTROLLER
+
+    function rotateStick({ x, y }) {
+      const angle = (JOYSTICK_ROTATION * Math.PI) / 180;
+      const cos = Math.round(Math.cos(angle) * 1e6) / 1e6;
+      const sin = Math.round(Math.sin(angle) * 1e6) / 1e6;
+      return { x: x * cos - y * sin, y: x * sin + y * cos };
+    }
+
+    function handleControllerInput(input) {
+      lastControllerAt = performance.now();
+      const { x, y } = rotateStick(input.joystick);
+      joystickX = Math.abs(x) < STICK_DEADZONE ? 0 : x;
+      const stickDir =
+        x > STICK_MENU_THRESHOLD ? 1 : x < -STICK_MENU_THRESHOLD ? -1 : 0;
+      const justPressed = input.buttons.map(
+        (down, i) => down && !controllerButtons[i]
+      );
+      controllerButtons = input.buttons;
+      const stickPressed = input.joystick.pressed === true;
+      const stickJustPressed = stickPressed && !stickWasPressed;
+      stickWasPressed = stickPressed;
+      const confirmPressed = stickJustPressed || justPressed.some(Boolean);
+
+      CONTROLLER_BUTTONS.forEach((key, i) => {
+        sideButtons[key].classList.toggle(
+          "pressed",
+          gameRunning && input.buttons[i]
+        );
+      });
+
+      if (screen === "select") {
+        if (stickDir !== 0 && stickDir !== lastStickDir) {
+          changeSelection(stickDir);
+        }
+        if (confirmPressed) chooseSorcerer();
+      } else if (screen === "message") {
+        const canContinue =
+          performance.now() - messageShownAt > MESSAGE_INPUT_DELAY;
+        if (canContinue && confirmPressed) {
+          document.querySelector("#messageButtons button")?.click();
+        }
+      } else if (gameRunning) {
+        if (y > STICK_JUMP_THRESHOLD) jump(player);
+        justPressed.forEach((pressed, i) => {
+          if (pressed) pressSideButton(CONTROLLER_BUTTONS[i]);
+        });
+      }
+      lastStickDir = stickDir;
+    }
+
+    function connectController() {
+      if (!location.protocol.startsWith("http")) return;
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      const socket = new WebSocket(`${protocol}//${location.host}/ws`);
+      // the server sends its last stored (possibly old) reading on connect, so skip it
+      let isFirstMessage = true;
+      socket.addEventListener("message", (event) => {
+        const message = JSON.parse(event.data);
+        if (isFirstMessage) {
+          isFirstMessage = false;
+          return;
+        }
+        if (message.type === "input") handleControllerInput(message.data);
+      });
+      socket.addEventListener("close", () => {
+        joystickX = 0;
+        setTimeout(connectController, 1500);
+      });
+      socket.addEventListener("error", () => socket.close());
+    }
 
     document
       .querySelector("#prevSorcerer")
@@ -1309,5 +1462,6 @@
     });
 
     loadAssets();
+    connectController();
   </script>
 </html>
