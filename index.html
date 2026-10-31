@@ -493,15 +493,14 @@
     const OPPONENT_START_X = 78;
     const OPPONENT_MIN_X = 55;
     const OPPONENT_MAX_X = 100 - CHARACTER_WIDTH;
-    const LOREM =
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
     const SORCERERS = [
       {
         id: "brom",
         name: "Brom",
         img: "assets/brom.png",
-        description: LOREM,
+        description:
+          "A sorcerer of earth and soil. Brom raises mountains, hurls rock and sends roots tearing through the ground beneath his enemies.",
         abilities: [
           { name: "Mountain", cast: castMountain, sound: quakeSound },
           { name: "Rock", cast: castRock },
@@ -512,7 +511,8 @@
         id: "kael",
         name: "Kael",
         img: "assets/kael.svg",
-        description: LOREM,
+        description:
+          "A sorcerer of fire and lava. Kael burns everything in his path, raining meteors and molten flame down on anyone who stands against him.",
         abilities: [
           { name: "Fireball", cast: castFireball },
           { name: "Meteor Shower", cast: castMeteorShower, sound: quakeSound },
@@ -523,7 +523,8 @@
         id: "nimbra",
         name: "Nimbra",
         img: "assets/nimbra.png",
-        description: LOREM,
+        description:
+          "A sorcerer of water and air. Nimbra calls down floods and whips up tornados, bending the sea and the sky to her will.",
         abilities: [
           { name: "Flood", cast: castFlood, sound: quakeSound },
           { name: "Tornado", cast: castTornado, sound: quakeSound },
@@ -534,7 +535,8 @@
         id: "vesh",
         name: "Vesh",
         img: "assets/vesh.svg",
-        description: LOREM,
+        description:
+          "A sorcerer of souls and dark magic. Vesh feeds on the spirits of the fallen, healing himself while his cursed blades cut through the living.",
         abilities: [
           { name: "Heal", cast: castHeal, heal: true },
           { name: "Moon Blade", cast: castMoonBlade },
