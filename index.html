@@ -508,6 +508,8 @@
       B: abilityButtons[2],
     };
     const activeAbilities = new Set();
+    const menuAudio = new Audio("/assets/audio/menu-music.mp3")
+    const bgAudio = new Audio("/assets/audio/bg-music.mp3")
 
     // ESP32 controller: buttons[i] from the payload triggers CONTROLLER_BUTTONS[i]
     const CONTROLLER_BUTTONS = ["X", "Y", "A", "B"];
@@ -524,7 +526,6 @@
     const SHIELD_DURATION = 5000;
     const MAX_HP = 100;
     const CHARACTER_WIDTH = 14;
-    // Abilities are written from the player's (left) side; the opponent's are mirrored around this line (in vw).
     const MIRROR_WIDTH = 93;
     const PLAYER_START_X = 8;
     const PLAYER_MIN_X = 0;
@@ -582,7 +583,6 @@
       },
     ];
 
-    // Opponent difficulty per level
     const LEVELS = [
       { castInterval: 2000, power: 1, moveSpeed: 10, dodgeChance: 0.6, shieldChance: 0.25 },
       { castInterval: 1500, power: 1.25, moveSpeed: 14, dodgeChance: 1, shieldChance: 0.4 },
@@ -674,6 +674,7 @@
             }
             loadingModal.style.display = "none";
             showSelect();
+            menuAudio.play();
             requestAnimationFrame(gameLoop);
           }
         };
@@ -927,12 +928,10 @@
       return f === player ? opponent : player;
     }
 
-    // x of the fighter as if it were standing on the player's side
     function frameX(f) {
       return f.dir === 1 ? f.x : MIRROR_WIDTH - f.x - CHARACTER_WIDTH;
     }
 
-    // converts an x written for the player's side into the caster's side
     function sideX(f, x, width) {
       return f.dir === 1 ? x : MIRROR_WIDTH - x - width;
     }
@@ -959,7 +958,6 @@
       el.remove();
     }
 
-    // returns true once the projectile is gone (hit, blocked or cleared)
     function checkHit(el, caster, damage) {
       if (!el.isConnected) return true;
       const target = otherFighter(caster);
