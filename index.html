@@ -499,6 +499,7 @@
     const abilityKeys = ["Y", "A", "B"];
     const abilityKeysPc = ["Z", "X", "C"];
     const activeAbilities = new Set();
+    const loadedImages = {};
 
     function loadSound(src, loop = false) {
       const sound = new Audio(src);
@@ -687,28 +688,37 @@
     const rand = (min, max) => min + Math.random() * (max - min);
 
     function loadAssets() {
-      const loadingBoxes = document.querySelectorAll(".loadingBox");
-      let loadedCount = 0;
-      let displayedCount = 0;
+  const loadingBoxes = document.querySelectorAll(".loadingBox");
+  let loadedCount = 0;
+  let displayedCount = 0;
 
-      for (const asset of imageAssets) {
-        const img = new Image();
+  for (const asset of imageAssets) {
+    const img = new Image();
 
-        img.onload = async () => {
-          loadedCount++;
-          if (loadedCount === imageAssets.length) {
-            while (displayedCount < loadingBoxes.length) {
-              await sleep(100);
-              loadingBoxes[displayedCount].classList.add("loadingBoxBlue");
-              displayedCount++;
-            }
-            document.querySelector(".blinkBtn").style.display = "flex";
-          }
-        };
+    img.onload = async () => {
+      await img.decode();
+      loadedImages[asset] = img;
 
-        img.src = asset;
+      loadedCount++;
+
+      if (loadedCount === imageAssets.length) {
+        while (displayedCount < loadingBoxes.length) {
+          await sleep(100);
+          loadingBoxes[displayedCount].classList.add("loadingBoxBlue");
+          displayedCount++;
+        }
+        document.querySelector(".blinkBtn").style.display = "flex";
       }
-    }
+    };
+
+    img.onerror = () => {
+      console.error("Failed to load:", asset);
+      loadedCount++;
+    };
+
+    img.src = asset;
+  }
+}
 
     function endLoading() {
       loadingModal.style.display = "none";
